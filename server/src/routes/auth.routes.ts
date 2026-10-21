@@ -3,6 +3,7 @@ import bcryptjs from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { db } from '../db/connection';
 import { authenticate, JWT_SECRET } from '../middleware/auth.middleware';
+import { logAuditEvent } from '../services/audit.service';
 import '../types';
 
 const router = Router();
@@ -60,27 +61,16 @@ router.post('/login', (req: Request, res: Response): void => {
   const recordLoginTx = db.transaction(() => {
     db.prepare("UPDATE users SET last_login_at = datetime('now', 'localtime') WHERE id = ?").run(user.id);
 
-    db.prepare(`
-      INSERT INTO audit_logs (
-        user_id,
-        username_snapshot,
-        user_role_snapshot,
-        action,
-        entity_type,
-        entity_id,
-        summary_text,
-        old_data_json,
-        new_data_json,
-        client_ip
-      ) VALUES (?, ?, ?, 'LOGIN', 'user', ?, ?, NULL, NULL, ?)
-    `).run(
-      user.id,
-      user.username,
-      user.role,
-      user.id,
-      `User ${user.username} logged in`,
+    logAuditEvent({
+      userId: user.id,
+      username: user.username,
+      userRole: user.role,
+      action: 'LOGIN',
+      entityType: 'user',
+      entityId: user.id,
+      summaryText: `User ${user.username} logged in`,
       clientIp
-    );
+    });
   });
 
   recordLoginTx();

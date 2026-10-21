@@ -6,6 +6,7 @@ import fs from 'fs';
 import { ipMiddleware } from './middleware/ip.middleware';
 import authRoutes from './routes/auth.routes';
 import usersRoutes from './routes/users.routes';
+import auditRoutes from './routes/audit.routes';
 
 const app = express();
 
@@ -27,6 +28,7 @@ app.get('/api/health', (_req, res) => {
 // API Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/users', usersRoutes);
+app.use('/api/audit-logs', auditRoutes);
 
 // Production static file serving & SPA fallback
 const clientDistPath = path.resolve(__dirname, '../../client/dist');

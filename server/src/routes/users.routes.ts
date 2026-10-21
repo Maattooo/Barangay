@@ -3,6 +3,7 @@ import bcryptjs from 'bcryptjs';
 import { db } from '../db/connection';
 import { authenticate } from '../middleware/auth.middleware';
 import { requireRole } from '../middleware/rbac.middleware';
+import { logAuditEvent } from '../services/audit.service';
 import { UserRole, UserResponse } from '../types';
 
 const router = Router();
@@ -88,28 +89,22 @@ router.post('/', (req: Request, res: Response): void => {
 
       newUserId = Number(result.lastInsertRowid);
 
-      db.prepare(`
-        INSERT INTO audit_logs (
-          user_id,
-          username_snapshot,
-          user_role_snapshot,
-          action,
-          entity_type,
-          entity_id,
-          summary_text,
-          old_data_json,
-          new_data_json,
-          client_ip
-        ) VALUES (?, ?, ?, 'CREATE', 'user', ?, ?, NULL, ?, ?)
-      `).run(
-        req.user!.id,
-        req.user!.username,
-        req.user!.role,
-        newUserId,
-        `Created user ${username.trim()} with role ${role}`,
-        JSON.stringify({ username: username.trim(), full_name: full_name.trim(), role, official_id: official_id ?? null }),
+      logAuditEvent({
+        userId: req.user!.id,
+        username: req.user!.username,
+        userRole: req.user!.role,
+        action: 'CREATE',
+        entityType: 'user',
+        entityId: newUserId,
+        summaryText: `Created user ${username.trim()} with role ${role}`,
+        newData: {
+          username: username.trim(),
+          full_name: full_name.trim(),
+          role,
+          official_id: official_id ?? null
+        },
         clientIp
-      );
+      });
     });
 
     createUserTx();
@@ -247,40 +242,44 @@ router.put('/:id', (req: Request, res: Response): void => {
         userId
       );
 
-      // Log UPDATE audit record without sensitive password hashes
-      db.prepare(`
-        INSERT INTO audit_logs (
-          user_id,
-          username_snapshot,
-          user_role_snapshot,
-          action,
-          entity_type,
-          entity_id,
-          summary_text,
-          old_data_json,
-          new_data_json,
-          client_ip
-        ) VALUES (?, ?, ?, 'UPDATE', 'user', ?, ?, ?, ?, ?)
-      `).run(
-        req.user!.id,
-        req.user!.username,
-        req.user!.role,
-        userId,
-        `Updated user ${existingUser.username}`,
-        JSON.stringify({
+      const isPasswordReset = typeof password === 'string' && password.trim().length > 0;
+      const isProfileUpdated = (
+        updatedFullName !== existingUser.full_name ||
+        updatedRole !== existingUser.role ||
+        updatedOfficialId !== existingUser.official_id ||
+        updatedIsActive !== existingUser.is_active
+      );
+
+      let summaryText = `Updated user ${existingUser.username}`;
+      if (isPasswordReset && isProfileUpdated) {
+        summaryText = `Updated user ${existingUser.username} (profile & password reset)`;
+      } else if (isPasswordReset) {
+        summaryText = `Updated user ${existingUser.username} (password reset)`;
+      }
+
+      // Log UPDATE audit record with computed JSON diff excluding unchanged fields
+      logAuditEvent({
+        userId: req.user!.id,
+        username: req.user!.username,
+        userRole: req.user!.role,
+        action: 'UPDATE',
+        entityType: 'user',
+        entityId: userId,
+        summaryText,
+        oldData: {
           full_name: existingUser.full_name,
           role: existingUser.role,
           official_id: existingUser.official_id,
           is_active: existingUser.is_active
-        }),
-        JSON.stringify({
+        },
+        newData: {
           full_name: updatedFullName,
           role: updatedRole,
           official_id: updatedOfficialId,
           is_active: updatedIsActive
-        }),
+        },
         clientIp
-      );
+      });
     });
 
     updateUserTx();
