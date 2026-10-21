@@ -4,16 +4,21 @@
   "private": true,
   "main": "dist/index.js",
   "scripts": {
-    "dev": "tsx watch src/index.ts",
-    "build": "tsc",
+    "build": "tsc && node -e \"const fs = require('fs'); const path = require('path'); const targetDir = path.resolve(__dirname, 'dist/db'); fs.mkdirSync(targetDir, { recursive: true }); fs.copyFileSync(path.resolve(__dirname, 'src/db/schema.sql'), path.join(targetDir, 'schema.sql'));\"",
     "start": "node dist/index.js",
-    "test": "vitest run"
+    "test": "vitest run",
+    "db:init": "tsx src/db/init.ts",
+    "db:seed": "tsx src/db/seed.ts"
   },
   "dependencies": {
+    "bcryptjs": "^3.0.3",
+    "better-sqlite3": "^13.0.3",
     "cors": "^2.8.5",
     "express": "^4.21.2"
   },
   "devDependencies": {
+    "@types/bcryptjs": "^2.4.6",
+    "@types/better-sqlite3": "^9.6.0",
     "@types/cors": "^2.8.17",
     "@types/express": "^4.17.21",
     "@types/node": "^20.17.19",
