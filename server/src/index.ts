@@ -1,13 +1,19 @@
 import express from 'express';
 import cors from 'cors';
+import cookieParser from 'cookie-parser';
 import path from 'path';
 import fs from 'fs';
+import { ipMiddleware } from './middleware/ip.middleware';
+import authRoutes from './routes/auth.routes';
+import usersRoutes from './routes/users.routes';
 
 const app = express();
 
 // Middleware
 app.use(cors());
+app.use(cookieParser());
 app.use(express.json());
+app.use(ipMiddleware);
 
 // Baseline health check endpoint
 app.get('/api/health', (_req, res) => {
@@ -17,6 +23,10 @@ app.get('/api/health', (_req, res) => {
     timestamp: new Date().toISOString()
   });
 });
+
+// API Routes
+app.use('/api/auth', authRoutes);
+app.use('/api/users', usersRoutes);
 
 // Production static file serving & SPA fallback
 const clientDistPath = path.resolve(__dirname, '../../client/dist');
