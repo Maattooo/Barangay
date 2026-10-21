@@ -1,0 +1,34 @@
+# Node dependency directories
+node_modules/
+server/node_modules/
+client/node_modules/
+
+# Production build artifacts
+dist/
+server/dist/
+client/dist/
+
+# Persistent SQLite database storage and WAL mode journal files
+data/*.sqlite
+data/*.sqlite-wal
+data/*.sqlite-shm
+data/backups/*.sqlite
+!data/.gitkeep
+!data/backups/.gitkeep
+
+# Environment variables
+.env
+.env.*
+!.env.example
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+*.log
+
+# Editor and OS files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

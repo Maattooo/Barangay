@@ -1,0 +1,29 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Native Browser Print Stylesheet (@media print) */
+@media print {
+  @page {
+    size: A4 portrait;
+    margin: 12mm;
+  }
+  body * {
+    visibility: hidden;
+  }
+  #printable-certificate-area,
+  #printable-certificate-area * {
+    visibility: visible;
+  }
+  #printable-certificate-area {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    box-shadow: none !important;
+    border: none !important;
+  }
+  .no-print {
+    display: none !important;
+  }
+}
