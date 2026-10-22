@@ -9,6 +9,18 @@ import {
   ExcelImportResult,
   PaginatedResidentsResponse
 } from '../types/resident';
+import {
+  CertificateTemplate,
+  BarangayOfficial,
+  BlotterCheckResponse,
+  PreviewIssuanceInput,
+  PreviewIssuanceResponse,
+  CreateIssuanceInput,
+  PrintableIssuancePayload,
+  IssuanceQueryParams,
+  IssuanceListResponse,
+  SingleIssuanceResponse
+} from '../types/certificates';
 
 const TOKEN_KEY = 'barangay_auth_token';
 
@@ -271,6 +283,69 @@ class ApiClient {
 
   public async getRecentBlotters(limit = 5): Promise<any> {
     return this.request<any>(`/api/blotter?limit=${limit}&page=1`, {
+      method: 'GET'
+    });
+  }
+
+  // --- Certificate & Issuance Endpoints ---
+
+  public async getTemplates(): Promise<CertificateTemplate[]> {
+    return this.request<CertificateTemplate[]>('/api/templates', {
+      method: 'GET'
+    });
+  }
+
+  public async getOfficials(includeInactive = false): Promise<BarangayOfficial[]> {
+    return this.request<BarangayOfficial[]>(`/api/officials${includeInactive ? '?include_inactive=true' : ''}`, {
+      method: 'GET'
+    });
+  }
+
+  public async checkResidentBlotter(residentId: number): Promise<BlotterCheckResponse> {
+    return this.request<BlotterCheckResponse>(`/api/residents/${residentId}/blotter-check`, {
+      method: 'GET'
+    });
+  }
+
+  public async previewIssuance(payload: PreviewIssuanceInput): Promise<PreviewIssuanceResponse> {
+    return this.request<PreviewIssuanceResponse>('/api/issuances/preview', {
+      method: 'POST',
+      body: JSON.stringify(payload)
+    });
+  }
+
+  public async createIssuance(payload: CreateIssuanceInput): Promise<PrintableIssuancePayload> {
+    return this.request<PrintableIssuancePayload>('/api/issuances', {
+      method: 'POST',
+      body: JSON.stringify(payload)
+    });
+  }
+
+  public async getIssuances(params: IssuanceQueryParams = {}): Promise<IssuanceListResponse> {
+    const searchParams = new URLSearchParams();
+    if (params.start_date) searchParams.set('start_date', params.start_date);
+    if (params.end_date) searchParams.set('end_date', params.end_date);
+    if (params.template_id !== undefined && params.template_id !== '') {
+      searchParams.set('template_id', String(params.template_id));
+    }
+    if (params.issued_by_user_id !== undefined && params.issued_by_user_id !== '') {
+      searchParams.set('issued_by_user_id', String(params.issued_by_user_id));
+    }
+    if (params.had_active_blotter !== undefined && params.had_active_blotter !== '') {
+      searchParams.set('had_active_blotter', String(params.had_active_blotter));
+    }
+    if (params.search) searchParams.set('search', params.search);
+    if (params.page !== undefined) searchParams.set('page', String(params.page));
+    if (params.limit !== undefined) searchParams.set('limit', String(params.limit));
+
+    const query = searchParams.toString();
+    return this.request<IssuanceListResponse>(`/api/issuances${query ? `?${query}` : ''}`, {
+      method: 'GET'
+    });
+  }
+
+  public async getIssuanceById(id: number): Promise<SingleIssuanceResponse> {
+    return this.request<SingleIssuanceResponse>(`/api/issuances/${id}`, {
       method: 'GET'
     });
   }
