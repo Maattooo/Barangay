@@ -9,6 +9,9 @@ import usersRoutes from './routes/users.routes';
 import auditRoutes from './routes/audit.routes';
 import residentsRoutes from './routes/residents.routes';
 import blotterRoutes from './routes/blotter.routes';
+import officialsRoutes from './routes/officials.routes';
+import templatesRoutes from './routes/templates.routes';
+import systemRoutes from './routes/system.routes';
 
 const app = express();
 
@@ -33,6 +36,9 @@ app.use('/api/users', usersRoutes);
 app.use('/api/audit-logs', auditRoutes);
 app.use('/api/residents', residentsRoutes);
 app.use('/api/blotter', blotterRoutes);
+app.use('/api/officials', officialsRoutes);
+app.use('/api/templates', templatesRoutes);
+app.use('/api/system', systemRoutes);
 
 // Production static file serving & SPA fallback
 const clientDistPath = path.resolve(__dirname, '../../client/dist');

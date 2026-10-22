@@ -31,3 +31,6 @@ declare global {
 export * from './audit';
 export * from './resident';
 export * from './blotter';
+export * from './officials';
+export * from './templates';
+export * from './system';
