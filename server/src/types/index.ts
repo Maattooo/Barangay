@@ -29,3 +29,4 @@ declare global {
 }
 
 export * from './audit';
+export * from './resident';
