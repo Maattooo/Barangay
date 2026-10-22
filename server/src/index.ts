@@ -13,6 +13,10 @@ import officialsRoutes from './routes/officials.routes';
 import templatesRoutes from './routes/templates.routes';
 import systemRoutes from './routes/system.routes';
 import issuancesRoutes from './routes/issuances.routes';
+import bcryptjs from 'bcryptjs';
+import { db } from './db/connection';
+import { initSchema } from './db/init';
+import { seed } from './db/seed';
 
 const app = express();
 
@@ -88,6 +92,29 @@ export function startServer(port = PORT, host = HOST) {
 
 // Automatically start server unless running in test environment
 if (process.env.NODE_ENV !== 'test') {
+  try {
+    initSchema();
+    const userCount = (db.prepare('SELECT count(*) as count FROM users').get() as { count: number })?.count ?? 0;
+    if (userCount === 0) {
+      seed();
+    }
+
+    // Idempotently provision standard demo staff accounts for zero-setup host launch
+    const staffPassHash = bcryptjs.hashSync('clerk123', 10);
+    const treasurerPassHash = bcryptjs.hashSync('treasurer123', 10);
+    const luponPassHash = bcryptjs.hashSync('lupon123', 10);
+
+    const insertStaff = db.prepare(`
+      INSERT OR IGNORE INTO users (username, password_hash, full_name, role, is_active)
+      VALUES (?, ?, ?, ?, 1)
+    `);
+
+    insertStaff.run('clerk', staffPassHash, 'Barangay Records Clerk', 'Clerk');
+    insertStaff.run('treasurer', treasurerPassHash, 'Barangay Treasurer', 'Treasurer');
+    insertStaff.run('lupon', luponPassHash, 'Lupong Tagapamayapa Member', 'Lupon');
+  } catch (err) {
+    console.error('[Barangay System] SQLite initialization error:', err);
+  }
   server = startServer();
 }
 
