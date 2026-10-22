@@ -21,6 +21,21 @@ import {
   IssuanceListResponse,
   SingleIssuanceResponse
 } from '../types/certificates';
+import {
+  BlotterRecord,
+  CreateBlotterInput,
+  UpdateBlotterInput,
+  BlotterQueryFilter,
+  BlotterListResponse,
+  CreateOfficialInput,
+  UpdateOfficialInput,
+  UpdateTemplateInput,
+  AuditLogFilters,
+  AuditLogListResponse,
+  UserAccount,
+  CreateUserInput,
+  UpdateUserInput
+} from '../types/admin';
 
 const TOKEN_KEY = 'barangay_auth_token';
 
@@ -348,6 +363,183 @@ class ApiClient {
     return this.request<SingleIssuanceResponse>(`/api/issuances/${id}`, {
       method: 'GET'
     });
+  }
+
+  // --- Blotter Endpoints ---
+
+  public async getBlotters(params: BlotterQueryFilter = {}): Promise<BlotterListResponse> {
+    const searchParams = new URLSearchParams();
+    if (params.search) searchParams.set('search', params.search);
+    if (params.status) searchParams.set('status', params.status);
+    if (params.respondent_id !== undefined) searchParams.set('respondent_id', String(params.respondent_id));
+    if (params.is_archived !== undefined) searchParams.set('is_archived', String(params.is_archived));
+    if (params.page !== undefined) searchParams.set('page', String(params.page));
+    if (params.limit !== undefined) searchParams.set('limit', String(params.limit));
+
+    const query = searchParams.toString();
+    return this.request<BlotterListResponse>(`/api/blotter${query ? `?${query}` : ''}`, {
+      method: 'GET'
+    });
+  }
+
+  public async getBlotter(id: number): Promise<BlotterRecord> {
+    return this.request<BlotterRecord>(`/api/blotter/${id}`, {
+      method: 'GET'
+    });
+  }
+
+  public async createBlotter(payload: CreateBlotterInput): Promise<BlotterRecord> {
+    return this.request<BlotterRecord>('/api/blotter', {
+      method: 'POST',
+      body: JSON.stringify(payload)
+    });
+  }
+
+  public async updateBlotter(id: number, payload: UpdateBlotterInput): Promise<BlotterRecord> {
+    return this.request<BlotterRecord>(`/api/blotter/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(payload)
+    });
+  }
+
+  public async archiveBlotter(id: number): Promise<{ message: string }> {
+    return this.request<{ message: string }>(`/api/blotter/${id}/archive`, {
+      method: 'PATCH'
+    });
+  }
+
+  // --- Barangay Officials Admin Endpoints ---
+
+  public async createOfficial(payload: CreateOfficialInput): Promise<BarangayOfficial> {
+    return this.request<BarangayOfficial>('/api/officials', {
+      method: 'POST',
+      body: JSON.stringify(payload)
+    });
+  }
+
+  public async updateOfficial(id: number, payload: UpdateOfficialInput): Promise<BarangayOfficial> {
+    return this.request<BarangayOfficial>(`/api/officials/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(payload)
+    });
+  }
+
+  // --- Certificate Templates Admin Endpoints ---
+
+  public async getTemplate(id: number | string): Promise<CertificateTemplate> {
+    return this.request<CertificateTemplate>(`/api/templates/${id}`, {
+      method: 'GET'
+    });
+  }
+
+  public async updateTemplate(id: number | string, payload: UpdateTemplateInput): Promise<CertificateTemplate> {
+    return this.request<CertificateTemplate>(`/api/templates/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(payload)
+    });
+  }
+
+  // --- Transparency Audit Logs Endpoints ---
+
+  public async getAuditLogs(params: AuditLogFilters = {}): Promise<AuditLogListResponse> {
+    const searchParams = new URLSearchParams();
+    if (params.user_id) searchParams.set('user_id', String(params.user_id));
+    if (params.action) searchParams.set('action', params.action);
+    if (params.entity_type) searchParams.set('entity_type', params.entity_type);
+    if (params.start_date) searchParams.set('start_date', params.start_date);
+    if (params.end_date) searchParams.set('end_date', params.end_date);
+    if (params.search) searchParams.set('search', params.search);
+    if (params.page !== undefined) searchParams.set('page', String(params.page));
+    if (params.limit !== undefined) searchParams.set('limit', String(params.limit));
+
+    const query = searchParams.toString();
+    return this.request<AuditLogListResponse>(`/api/audit-logs${query ? `?${query}` : ''}`, {
+      method: 'GET'
+    });
+  }
+
+  // --- Staff User Management Endpoints ---
+
+  public async getUsers(): Promise<UserAccount[]> {
+    return this.request<UserAccount[]>('/api/users', {
+      method: 'GET'
+    });
+  }
+
+  public async createUser(payload: CreateUserInput): Promise<UserAccount> {
+    return this.request<UserAccount>('/api/users', {
+      method: 'POST',
+      body: JSON.stringify(payload)
+    });
+  }
+
+  public async updateUser(id: number, payload: UpdateUserInput): Promise<UserAccount> {
+    return this.request<UserAccount>(`/api/users/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(payload)
+    });
+  }
+
+  // --- Settings & Database Backup Endpoints ---
+
+  public async updateSystemSettings(settings: Record<string, string>): Promise<any> {
+    return this.request<any>('/api/system/settings', {
+      method: 'PUT',
+      body: JSON.stringify(settings)
+    });
+  }
+
+  public async downloadDatabaseBackup(): Promise<Blob> {
+    const endpoint = '/api/system/backup';
+    const headers = new Headers();
+    const token = this.getToken();
+    if (token) {
+      headers.set('Authorization', `Bearer ${token}`);
+    }
+
+    const res = await fetch(endpoint, {
+      method: 'POST',
+      headers,
+      credentials: 'include'
+    });
+
+    if (!res.ok) {
+      let errorMessage = `HTTP ${res.status}: ${res.statusText}`;
+      try {
+        const errorData = await res.json();
+        if (errorData?.error) errorMessage = errorData.error;
+      } catch {
+        // Not JSON
+      }
+      throw new Error(errorMessage);
+    }
+
+    const blob = await res.blob();
+
+    if (typeof window !== 'undefined' && typeof document !== 'undefined') {
+      const url = window.URL?.createObjectURL ? window.URL.createObjectURL(blob) : '';
+      if (url) {
+        const a = document.createElement('a');
+        a.href = url;
+        const contentDisposition = res.headers.get('Content-Disposition');
+        let filename = 'barangay_backup.sqlite';
+        if (contentDisposition) {
+          const match = contentDisposition.match(/filename="?([^"]+)"?/);
+          if (match && match[1]) {
+            filename = match[1];
+          }
+        }
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        if (window.URL?.revokeObjectURL) {
+          window.URL.revokeObjectURL(url);
+        }
+      }
+    }
+
+    return blob;
   }
 }
 
