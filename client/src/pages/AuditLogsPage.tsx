@@ -133,62 +133,62 @@ export const AuditLogsPage: React.FC = () => {
     switch (action) {
       case 'CREATE':
         return (
-          <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">
+          <span className="inline-flex items-center px-1.5 py-0.5 rounded-none text-[10px] font-mono font-bold uppercase bg-emerald-50 text-emerald-800 border border-emerald-300">
             CREATE
           </span>
         );
       case 'UPDATE':
         return (
-          <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold bg-blue-100 text-blue-800 border border-blue-200">
+          <span className="inline-flex items-center px-1.5 py-0.5 rounded-none text-[10px] font-mono font-bold uppercase bg-blue-50 text-blue-800 border border-blue-300">
             UPDATE
           </span>
         );
       case 'ARCHIVE':
         return (
-          <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold bg-red-100 text-red-800 border border-red-200">
+          <span className="inline-flex items-center px-1.5 py-0.5 rounded-none text-[10px] font-mono font-bold uppercase bg-red-50 text-red-800 border border-red-300">
             ARCHIVE
           </span>
         );
       case 'RESTORE':
         return (
-          <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold bg-teal-100 text-teal-800 border border-teal-200">
+          <span className="inline-flex items-center px-1.5 py-0.5 rounded-none text-[10px] font-mono font-bold uppercase bg-teal-50 text-teal-800 border border-teal-300">
             RESTORE
           </span>
         );
       case 'PRINT_CERTIFICATE':
         return (
-          <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold bg-purple-100 text-purple-800 border border-purple-200">
+          <span className="inline-flex items-center px-1.5 py-0.5 rounded-none text-[10px] font-mono font-bold uppercase bg-zinc-900 text-white border border-zinc-900">
             PRINT_CERTIFICATE
           </span>
         );
       case 'BLOTTER_OVERRIDE':
         return (
-          <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold bg-amber-100 text-amber-800 border border-amber-200">
+          <span className="inline-flex items-center px-1.5 py-0.5 rounded-none text-[10px] font-mono font-bold uppercase bg-amber-50 text-amber-800 border border-amber-300">
             BLOTTER_OVERRIDE
           </span>
         );
       case 'LOGIN':
         return (
-          <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold bg-slate-100 text-slate-800 border border-slate-200">
+          <span className="inline-flex items-center px-1.5 py-0.5 rounded-none text-[10px] font-mono font-bold uppercase bg-zinc-100 text-zinc-700 border border-zinc-300">
             LOGIN
           </span>
         );
       case 'IMPORT_EXCEL':
       case 'EXPORT_EXCEL':
         return (
-          <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold bg-cyan-100 text-cyan-800 border border-cyan-200">
+          <span className="inline-flex items-center px-1.5 py-0.5 rounded-none text-[10px] font-mono font-bold uppercase bg-zinc-100 text-zinc-800 border border-zinc-300">
             {action}
           </span>
         );
       case 'SYSTEM_BACKUP':
         return (
-          <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold bg-indigo-100 text-indigo-800 border border-indigo-200">
+          <span className="inline-flex items-center px-1.5 py-0.5 rounded-none text-[10px] font-mono font-bold uppercase bg-zinc-100 text-zinc-800 border border-zinc-300">
             SYSTEM_BACKUP
           </span>
         );
       default:
         return (
-          <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold bg-slate-100 text-slate-800 border border-slate-200">
+          <span className="inline-flex items-center px-1.5 py-0.5 rounded-none text-[10px] font-mono font-bold uppercase bg-zinc-100 text-zinc-800 border border-zinc-300">
             {action}
           </span>
         );
@@ -196,28 +196,28 @@ export const AuditLogsPage: React.FC = () => {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* Top Header Card */}
-      <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div className="flex items-center gap-3.5">
-          <div className="p-3 bg-purple-100 text-purple-700 rounded-xl shadow-inner">
-            <History className="w-7 h-7" />
+      <div className="bg-white p-4 sm:p-5 rounded-none border border-zinc-200 shadow-none flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="flex items-center gap-3">
+          <div className="p-2.5 bg-zinc-100 text-zinc-800 rounded-none border border-zinc-200">
+            <History className="w-5 h-5" />
           </div>
           <div>
-            <h1 className="text-xl font-bold text-slate-900 tracking-tight">
+            <h1 className="text-base sm:text-lg font-black text-zinc-950 uppercase tracking-tight">
               Transparency Audit Trail
             </h1>
-            <p className="text-xs text-slate-500">
+            <p className="text-xs text-zinc-500 font-mono mt-0.5">
               Immutable forensic ledger &bull; Who modified what, when, and from which workstation IP
             </p>
           </div>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2">
           <button
             onClick={() => fetchAuditLogs()}
             aria-label="Refresh audit logs"
-            className="p-2.5 text-slate-500 hover:text-slate-800 hover:bg-slate-100 rounded-xl border border-slate-200 transition-colors cursor-pointer"
+            className="p-1.5 text-zinc-600 hover:text-zinc-950 hover:bg-zinc-100 rounded-none border border-zinc-300 transition-colors cursor-pointer"
             title="Refresh logs"
           >
             <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
@@ -226,18 +226,18 @@ export const AuditLogsPage: React.FC = () => {
       </div>
 
       {/* Filter and Search Bar */}
-      <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm space-y-3">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-3">
+      <div className="bg-white p-3.5 rounded-none border border-zinc-200 shadow-none space-y-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-2.5">
           {/* Search Summary / User */}
           <div className="relative lg:col-span-2">
-            <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+            <Search className="w-3.5 h-3.5 text-zinc-400 absolute left-3 top-1/2 -translate-y-1/2" />
             <input
               type="text"
               aria-label="Search audit summary"
               placeholder="Search user, summary text, or IP..."
               value={search}
               onChange={handleSearchChange}
-              className="w-full pl-9 pr-3 py-2 text-xs border border-slate-200 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none transition"
+              className="w-full pl-9 pr-3 py-1.5 text-xs border border-zinc-300 rounded-none focus:ring-1 focus:ring-zinc-900 focus:border-zinc-900 outline-none transition-colors"
             />
           </div>
 
@@ -247,7 +247,7 @@ export const AuditLogsPage: React.FC = () => {
               aria-label="Filter by user"
               value={selectedUserId}
               onChange={(e) => handleUserChange(e.target.value)}
-              className="w-full px-3 py-2 text-xs border border-slate-200 rounded-lg bg-white text-slate-700 focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none transition font-medium"
+              className="w-full px-2.5 py-1.5 text-xs font-mono border border-zinc-300 rounded-none bg-white text-zinc-800 focus:ring-1 focus:ring-zinc-900 focus:border-zinc-900 outline-none transition-colors"
             >
               <option value="">All Users</option>
               {users.map((u) => (
@@ -264,7 +264,7 @@ export const AuditLogsPage: React.FC = () => {
               aria-label="Filter by action"
               value={selectedAction}
               onChange={(e) => handleActionChange(e.target.value)}
-              className="w-full px-3 py-2 text-xs border border-slate-200 rounded-lg bg-white text-slate-700 focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none transition font-medium"
+              className="w-full px-2.5 py-1.5 text-xs font-mono border border-zinc-300 rounded-none bg-white text-zinc-800 focus:ring-1 focus:ring-zinc-900 focus:border-zinc-900 outline-none transition-colors"
             >
               <option value="">All Actions</option>
               {AUDIT_ACTIONS.map((a) => (
@@ -281,7 +281,7 @@ export const AuditLogsPage: React.FC = () => {
               aria-label="Filter by entity type"
               value={selectedEntity}
               onChange={(e) => handleEntityChange(e.target.value)}
-              className="w-full px-3 py-2 text-xs border border-slate-200 rounded-lg bg-white text-slate-700 focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none transition font-medium"
+              className="w-full px-2.5 py-1.5 text-xs font-mono border border-zinc-300 rounded-none bg-white text-zinc-800 focus:ring-1 focus:ring-zinc-900 focus:border-zinc-900 outline-none transition-colors"
             >
               <option value="">All Entity Types</option>
               {AUDIT_ENTITY_TYPES.map((et) => (
@@ -293,7 +293,7 @@ export const AuditLogsPage: React.FC = () => {
           </div>
 
           {/* Date range inputs */}
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-1 font-mono">
             <input
               type="date"
               aria-label="Start date"
@@ -302,9 +302,9 @@ export const AuditLogsPage: React.FC = () => {
                 setStartDate(e.target.value);
                 setPage(1);
               }}
-              className="w-1/2 px-2 py-1.5 text-[11px] border border-slate-200 rounded-lg focus:ring-2 focus:ring-purple-500 outline-none"
+              className="w-1/2 px-2 py-1 text-[11px] border border-zinc-300 rounded-none focus:ring-1 focus:ring-zinc-900 outline-none"
             />
-            <span className="text-slate-400 text-xs">&rarr;</span>
+            <span className="text-zinc-400 text-xs">&rarr;</span>
             <input
               type="date"
               aria-label="End date"
@@ -313,50 +313,50 @@ export const AuditLogsPage: React.FC = () => {
                 setEndDate(e.target.value);
                 setPage(1);
               }}
-              className="w-1/2 px-2 py-1.5 text-[11px] border border-slate-200 rounded-lg focus:ring-2 focus:ring-purple-500 outline-none"
+              className="w-1/2 px-2 py-1 text-[11px] border border-zinc-300 rounded-none focus:ring-1 focus:ring-zinc-900 outline-none"
             />
           </div>
         </div>
       </div>
 
       {/* Audit Logs Table */}
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+      <div className="bg-white rounded-none border border-zinc-200 shadow-none overflow-hidden">
         {loading ? (
-          <div className="p-12 text-center text-slate-500 flex flex-col items-center justify-center gap-2">
-            <Loader2 className="w-8 h-8 text-purple-600 animate-spin" />
-            <p className="text-xs font-medium">Loading audit logs...</p>
+          <div className="p-12 text-center text-zinc-500 font-mono flex flex-col items-center justify-center gap-2">
+            <Loader2 className="w-6 h-6 text-zinc-600 animate-spin" />
+            <p className="text-xs">Loading audit logs...</p>
           </div>
         ) : error ? (
-          <div className="p-8 text-center text-red-600 space-y-2">
-            <p className="text-sm font-semibold">{error}</p>
+          <div className="p-8 text-center text-red-700 space-y-2 font-mono">
+            <p className="text-xs font-semibold">{error}</p>
             <button
               onClick={() => fetchAuditLogs()}
-              className="text-xs text-purple-700 underline font-semibold cursor-pointer"
+              className="text-xs text-zinc-900 underline font-semibold cursor-pointer uppercase tracking-wider"
             >
               Try again
             </button>
           </div>
         ) : logs.length === 0 ? (
-          <div className="p-12 text-center text-slate-400 space-y-3">
-            <ShieldAlert className="w-10 h-10 mx-auto text-slate-300" />
-            <p className="text-sm font-medium text-slate-600">No audit log records found.</p>
-            <p className="text-xs text-slate-400">Try adjusting your filters or date range.</p>
+          <div className="p-12 text-center text-zinc-400 space-y-2 font-mono">
+            <ShieldAlert className="w-8 h-8 mx-auto text-zinc-300" />
+            <p className="text-xs font-medium text-zinc-600">No audit log records found.</p>
+            <p className="text-[11px] text-zinc-400">Try adjusting your filters or date range.</p>
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs">
-              <thead className="bg-slate-50 text-slate-500 uppercase tracking-wider font-semibold border-b border-slate-200">
+              <thead className="bg-zinc-50 text-zinc-700 uppercase tracking-wider font-mono font-semibold border-b border-zinc-200 text-[11px]">
                 <tr>
-                  <th className="px-5 py-3.5 whitespace-nowrap">Timestamp</th>
-                  <th className="px-5 py-3.5 whitespace-nowrap">User</th>
-                  <th className="px-5 py-3.5 whitespace-nowrap">Action</th>
-                  <th className="px-5 py-3.5 whitespace-nowrap">Entity</th>
-                  <th className="px-5 py-3.5">Summary</th>
-                  <th className="px-5 py-3.5 whitespace-nowrap">Client IP</th>
-                  <th className="px-5 py-3.5 text-right whitespace-nowrap">Diff</th>
+                  <th className="px-4 py-3 whitespace-nowrap">Timestamp</th>
+                  <th className="px-4 py-3 whitespace-nowrap">User</th>
+                  <th className="px-4 py-3 whitespace-nowrap">Action</th>
+                  <th className="px-4 py-3 whitespace-nowrap">Entity</th>
+                  <th className="px-4 py-3">Summary</th>
+                  <th className="px-4 py-3 whitespace-nowrap">Client IP</th>
+                  <th className="px-4 py-3 text-right whitespace-nowrap">Diff</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100 text-slate-700">
+              <tbody className="divide-y divide-zinc-200 text-zinc-900 font-sans">
                 {logs.map((log) => {
                   const hasDiff =
                     (log.old_data_json && log.old_data_json !== '{}') ||
@@ -364,41 +364,41 @@ export const AuditLogsPage: React.FC = () => {
                     log.action === 'UPDATE';
 
                   return (
-                    <tr key={log.id} className="hover:bg-slate-50/80 transition-colors">
-                      <td className="px-5 py-3.5 whitespace-nowrap text-slate-500 font-mono text-[11px]">
+                    <tr key={log.id} className="hover:bg-zinc-50 transition-colors">
+                      <td className="px-4 py-3 whitespace-nowrap text-zinc-600 font-mono text-[11px]">
                         {log.created_at}
                       </td>
-                      <td className="px-5 py-3.5 whitespace-nowrap">
-                        <span className="font-semibold text-slate-900 block">
+                      <td className="px-4 py-3 whitespace-nowrap">
+                        <span className="font-bold text-zinc-950 block">
                           {log.username_snapshot}
                         </span>
-                        <span className="text-[10px] text-slate-400">{log.user_role_snapshot}</span>
+                        <span className="text-[10px] text-zinc-500 font-mono uppercase">{log.user_role_snapshot}</span>
                       </td>
-                      <td className="px-5 py-3.5 whitespace-nowrap">{getActionBadge(log.action)}</td>
-                      <td className="px-5 py-3.5 whitespace-nowrap">
-                        <span className="font-mono text-[11px] text-slate-600">
+                      <td className="px-4 py-3 whitespace-nowrap">{getActionBadge(log.action)}</td>
+                      <td className="px-4 py-3 whitespace-nowrap">
+                        <span className="font-mono text-[11px] text-zinc-700 uppercase">
                           {log.entity_type} {log.entity_id ? `#${log.entity_id}` : ''}
                         </span>
                       </td>
-                      <td className="px-5 py-3.5 text-slate-800 font-medium max-w-md">
+                      <td className="px-4 py-3 text-zinc-900 font-medium max-w-md">
                         {log.summary_text}
                       </td>
-                      <td className="px-5 py-3.5 whitespace-nowrap font-mono text-slate-500 text-[11px]">
+                      <td className="px-4 py-3 whitespace-nowrap font-mono text-zinc-600 text-[11px]">
                         {log.client_ip}
                       </td>
-                      <td className="px-5 py-3.5 text-right whitespace-nowrap">
+                      <td className="px-4 py-3 text-right whitespace-nowrap">
                         {hasDiff ? (
                           <button
                             type="button"
                             onClick={() => setDiffLogEntry(log)}
                             aria-label={`View Diff for event #${log.id}`}
-                            className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold text-purple-700 bg-purple-50 hover:bg-purple-100 border border-purple-200 rounded-lg transition-colors cursor-pointer"
+                            className="inline-flex items-center gap-1 px-2 py-1 text-xs font-mono font-medium uppercase tracking-wider text-zinc-800 bg-white hover:bg-zinc-100 border border-zinc-300 rounded-none transition-colors cursor-pointer"
                           >
-                            <GitCompare className="w-3 h-3" />
+                            <GitCompare className="w-3 h-3 text-zinc-600" />
                             <span>View Diff</span>
                           </button>
                         ) : (
-                          <span className="text-slate-300 text-xs">-</span>
+                          <span className="text-zinc-400 font-mono text-xs">-</span>
                         )}
                       </td>
                     </tr>
@@ -411,13 +411,13 @@ export const AuditLogsPage: React.FC = () => {
 
         {/* Pagination Footer */}
         {!loading && totalLogs > 0 && (
-          <div className="flex items-center justify-between px-6 py-3.5 border-t border-slate-200 bg-slate-50 text-xs text-slate-600">
+          <div className="flex items-center justify-between px-4 py-3 border-t border-zinc-200 bg-zinc-50 text-xs font-mono text-zinc-600">
             <div>
-              Showing <span className="font-semibold text-slate-900">{(page - 1) * limit + 1}</span> to{' '}
-              <span className="font-semibold text-slate-900">
+              Showing <span className="font-bold text-zinc-900">{(page - 1) * limit + 1}</span> to{' '}
+              <span className="font-bold text-zinc-900">
                 {Math.min(page * limit, totalLogs)}
               </span>{' '}
-              of <span className="font-semibold text-slate-900">{totalLogs}</span> events
+              of <span className="font-bold text-zinc-900">{totalLogs}</span> events
             </div>
 
             <div className="flex items-center gap-2">
@@ -425,18 +425,18 @@ export const AuditLogsPage: React.FC = () => {
                 onClick={() => setPage((p) => Math.max(1, p - 1))}
                 disabled={page <= 1}
                 aria-label="Previous page"
-                className="p-1.5 rounded-lg border border-slate-200 bg-white text-slate-600 hover:bg-slate-100 disabled:opacity-40 transition-colors cursor-pointer"
+                className="p-1 rounded-none border border-zinc-300 bg-white text-zinc-700 hover:bg-zinc-100 disabled:opacity-40 transition-colors cursor-pointer"
               >
                 <ChevronLeft className="w-4 h-4" />
               </button>
-              <span className="text-xs font-medium px-2">
+              <span className="text-xs font-mono px-2">
                 Page {page} of {totalPages}
               </span>
               <button
                 onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
                 disabled={page >= totalPages}
                 aria-label="Next page"
-                className="p-1.5 rounded-lg border border-slate-200 bg-white text-slate-600 hover:bg-slate-100 disabled:opacity-40 transition-colors cursor-pointer"
+                className="p-1 rounded-none border border-zinc-300 bg-white text-zinc-700 hover:bg-zinc-100 disabled:opacity-40 transition-colors cursor-pointer"
               >
                 <ChevronRight className="w-4 h-4" />
               </button>

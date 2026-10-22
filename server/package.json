@@ -4,6 +4,7 @@
   "private": true,
   "main": "dist/index.js",
   "scripts": {
+    "dev": "tsx watch src/index.ts",
     "build": "tsc && node -e \"const fs = require('fs'); const path = require('path'); const targetDir = path.resolve(__dirname, 'dist/db'); fs.mkdirSync(targetDir, { recursive: true }); fs.copyFileSync(path.resolve(__dirname, 'src/db/schema.sql'), path.join(targetDir, 'schema.sql'));\"",
     "start": "node dist/index.js",
     "test": "vitest run",

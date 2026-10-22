@@ -65,6 +65,55 @@ router.get('/info', (_req: Request, res: Response): void => {
 });
 
 /**
+ * PUT /api/system/settings
+ * Updates key-value pairs in the system_settings table.
+ * Restricted strictly to Admin.
+ */
+router.put('/settings', requireRole('Admin'), (req: Request, res: Response): void => {
+  try {
+    const newSettings = req.body;
+    if (!newSettings || typeof newSettings !== 'object') {
+      res.status(400).json({ error: 'Settings payload must be a key-value object' });
+      return;
+    }
+
+    const upsertStmt = db.prepare(`
+      INSERT INTO system_settings (key, value)
+      VALUES (?, ?)
+      ON CONFLICT(key) DO UPDATE SET value = excluded.value
+    `);
+
+    const updateTransaction = db.transaction((entries: [string, any][]) => {
+      for (const [key, val] of entries) {
+        if (typeof key === 'string' && val !== undefined && val !== null) {
+          const stringVal = typeof val === 'string' ? val : JSON.stringify(val);
+          upsertStmt.run(key, stringVal);
+        }
+      }
+    });
+
+    updateTransaction(Object.entries(newSettings));
+
+    // Log UPDATE audit event
+    logAuditEvent({
+      userId: req.user!.id,
+      username: req.user!.username,
+      userRole: req.user!.role,
+      action: 'UPDATE',
+      entityType: 'user',
+      entityId: req.user!.id,
+      summaryText: 'Updated barangay system settings and territory metadata',
+      clientIp: req.clientIp
+    });
+
+    const updated = getSystemSettings();
+    res.status(200).json({ success: true, settings: updated });
+  } catch (err: any) {
+    res.status(500).json({ error: 'Failed to update system settings', details: err.message });
+  }
+});
+
+/**
  * POST /api/system/backup
  * Creates an SQLite hot snapshot backup and streams the resulting file for download.
  * Attaches explicit stream error handler. Restricted strictly to Admin.

@@ -109,10 +109,10 @@ describe('Resident RBI Management & Demographics Test Suite (residents.test.ts)'
       // Clear residents table for clean derivation verification
       db.prepare('DELETE FROM residents').run();
 
-      const bday65 = getRelativeBirthdate(65);
-      const bday60 = getRelativeBirthdate(60);
-      const bday25 = getRelativeBirthdate(25);
-      const bday17 = getRelativeBirthdate(17);
+      const bday65 = getRelativeBirthdate(65, -5);
+      const bday60 = getRelativeBirthdate(60, -5);
+      const bday25 = getRelativeBirthdate(25, -5);
+      const bday17 = getRelativeBirthdate(17, -5);
 
       const insert = db.prepare(`
         INSERT INTO residents (first_name, last_name, birthdate, sex, civil_status, purok, is_archived)

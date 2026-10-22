@@ -12,12 +12,16 @@ import {
   History,
   Settings,
   Building2,
-  X
+  X,
+  PanelLeftClose,
+  PanelLeftOpen
 } from 'lucide-react';
 
 interface SidebarProps {
   onClose?: () => void;
   barangayName?: string;
+  isCollapsed?: boolean;
+  onToggleCollapse?: () => void;
 }
 
 interface NavItem {
@@ -78,7 +82,12 @@ export const NAV_ITEMS: NavItem[] = [
   }
 ];
 
-export const Sidebar: React.FC<SidebarProps> = ({ onClose, barangayName = 'Barangay System' }) => {
+export const Sidebar: React.FC<SidebarProps> = ({
+  onClose,
+  barangayName = 'Barangay System',
+  isCollapsed = false,
+  onToggleCollapse
+}) => {
   const { role } = useAuth();
 
   const visibleItems = NAV_ITEMS.filter((item) => role && item.roles.includes(role));
@@ -86,25 +95,49 @@ export const Sidebar: React.FC<SidebarProps> = ({ onClose, barangayName = 'Baran
   return (
     <aside
       data-testid="sidebar"
-      className="w-64 bg-slate-900 text-slate-200 flex flex-col h-full border-r border-slate-800 select-none"
+      className={`${
+        isCollapsed ? 'w-16' : 'w-64'
+      } bg-[#121214] text-zinc-200 flex flex-col h-full border-r border-zinc-800 select-none transition-all duration-150 rounded-none`}
     >
       {/* Branding Header */}
-      <div className="p-4 flex items-center justify-between border-b border-slate-800">
-        <div className="flex items-center gap-3">
-          <div className="p-2 bg-blue-600 rounded-lg shadow-sm">
-            <Building2 className="w-5 h-5 text-white" />
+      <div className="p-3.5 flex items-center justify-between border-b border-zinc-800 min-h-[56px]">
+        <div className="flex items-center gap-3 overflow-hidden">
+          <div className="p-2 bg-zinc-800 border border-zinc-700 text-white rounded-none flex-shrink-0">
+            <Building2 className="w-4 h-4 text-zinc-100" />
           </div>
-          <div>
-            <h2 className="font-bold text-white text-sm tracking-tight leading-tight line-clamp-1">
-              {barangayName}
-            </h2>
-            <p className="text-[11px] text-slate-400">Barangay Portal</p>
-          </div>
+          {!isCollapsed && (
+            <div className="overflow-hidden">
+              <h2 className="font-bold text-white text-xs tracking-tight uppercase truncate">
+                {barangayName}
+              </h2>
+              <p className="text-[10px] font-mono text-zinc-400 tracking-wider uppercase">
+                Station Portal
+              </p>
+            </div>
+          )}
         </div>
+
+        {/* Desktop Collapse Toggle */}
+        {onToggleCollapse && (
+          <button
+            onClick={onToggleCollapse}
+            className="hidden md:flex p-1.5 text-zinc-400 hover:text-white hover:bg-zinc-800 rounded-none border border-transparent hover:border-zinc-700 transition-colors"
+            title={isCollapsed ? 'Expand sidebar' : 'Collapse to rail'}
+            aria-label={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+          >
+            {isCollapsed ? (
+              <PanelLeftOpen className="w-4 h-4" />
+            ) : (
+              <PanelLeftClose className="w-4 h-4" />
+            )}
+          </button>
+        )}
+
+        {/* Mobile Close Button */}
         {onClose && (
           <button
             onClick={onClose}
-            className="md:hidden p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800"
+            className="md:hidden p-1.5 text-zinc-400 hover:text-white hover:bg-zinc-800 rounded-none"
             aria-label="Close sidebar"
           >
             <X className="w-5 h-5" />
@@ -113,7 +146,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ onClose, barangayName = 'Baran
       </div>
 
       {/* Navigation Links */}
-      <nav className="flex-1 px-3 py-4 space-y-1.5 overflow-y-auto" aria-label="Main Navigation">
+      <nav className="flex-1 px-2 py-3 space-y-1 overflow-y-auto" aria-label="Main Navigation">
         {visibleItems.map((item) => {
           const Icon = item.icon;
           return (
@@ -121,26 +154,29 @@ export const Sidebar: React.FC<SidebarProps> = ({ onClose, barangayName = 'Baran
               key={item.path}
               to={item.path}
               onClick={onClose}
+              title={isCollapsed ? item.label : undefined}
               className={({ isActive }) =>
-                `flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-150 ${
+                `flex items-center ${
+                  isCollapsed ? 'justify-center px-2' : 'gap-3 px-3'
+                } py-2 text-xs font-medium rounded-none transition-all duration-150 border-l-2 ${
                   isActive
-                    ? 'bg-blue-600 text-white font-semibold shadow-sm'
-                    : 'text-slate-300 hover:bg-slate-800 hover:text-white'
+                    ? 'bg-zinc-800/90 text-white font-semibold border-white shadow-none'
+                    : 'text-zinc-400 border-transparent hover:bg-zinc-800/40 hover:text-zinc-100 hover:border-zinc-600'
                 }`
               }
             >
               <Icon className="w-4 h-4 flex-shrink-0" />
-              <span>{item.label}</span>
+              {!isCollapsed && <span className="truncate">{item.label}</span>}
             </NavLink>
           );
         })}
       </nav>
 
       {/* Footer System Status */}
-      <div className="p-3 border-t border-slate-800 bg-slate-950/50 text-[11px] text-slate-400">
-        <div className="flex items-center gap-2">
-          <span className="w-2 h-2 rounded-full bg-emerald-400"></span>
-          <span>Offline LAN Mode Active</span>
+      <div className="p-3 border-t border-zinc-800 bg-[#0C0C0E] text-[10px] font-mono text-zinc-400">
+        <div className={`flex items-center ${isCollapsed ? 'justify-center' : 'gap-2'}`}>
+          <span className="w-2 h-2 rounded-none bg-emerald-500 inline-block flex-shrink-0 animate-pulse"></span>
+          {!isCollapsed && <span className="uppercase tracking-wider truncate">Offline LAN Active</span>}
         </div>
       </div>
     </aside>

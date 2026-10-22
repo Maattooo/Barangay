@@ -105,19 +105,19 @@ export const UserFormModal: React.FC<UserFormModalProps> = ({
       role="dialog"
       aria-modal="true"
       aria-labelledby="user-modal-title"
-      className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4"
+      className="fixed inset-0 z-50 overflow-y-auto bg-black/60 flex items-center justify-center p-4"
     >
-      <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full border border-slate-200 overflow-hidden my-8 animate-in fade-in duration-150">
-        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 bg-slate-50">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-blue-100 text-blue-700 rounded-lg">
-              {isEditing ? <KeyRound className="w-5 h-5" /> : <UserPlus className="w-5 h-5" />}
+      <div className="bg-white rounded-none shadow-none max-w-md w-full border border-zinc-300 overflow-hidden my-8">
+        <div className="flex items-center justify-between px-5 py-3.5 border-b border-zinc-200 bg-zinc-50">
+          <div className="flex items-center gap-2.5">
+            <div className="p-1.5 bg-zinc-100 text-zinc-800 rounded-none border border-zinc-200">
+              {isEditing ? <KeyRound className="w-4 h-4" /> : <UserPlus className="w-4 h-4" />}
             </div>
             <div>
-              <h2 id="user-modal-title" className="text-base font-bold text-slate-900">
+              <h2 id="user-modal-title" className="text-sm font-bold text-zinc-950 uppercase tracking-tight">
                 {isEditing ? 'Edit User / Reset Password' : 'Add Staff User'}
               </h2>
-              <p className="text-xs text-slate-500">
+              <p className="text-xs text-zinc-500 font-mono">
                 {isEditing ? `Modifying account @${user?.username}` : 'Create workstation staff login'}
               </p>
             </div>
@@ -125,17 +125,17 @@ export const UserFormModal: React.FC<UserFormModalProps> = ({
           <button
             onClick={onClose}
             aria-label="Close modal"
-            className="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100 transition-colors cursor-pointer"
+            className="p-1 text-zinc-400 hover:text-zinc-950 rounded-none transition-colors cursor-pointer"
           >
-            <X className="w-5 h-5" />
+            <X className="w-4 h-4" />
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-6 space-y-4">
+        <form onSubmit={handleSubmit} className="p-5 space-y-4">
           {error && (
             <div
               role="alert"
-              className="p-3 bg-red-50 border border-red-200 rounded-lg text-xs text-red-700 font-medium flex items-center gap-2"
+              className="p-2.5 bg-red-50 border border-red-200 rounded-none text-xs font-mono text-red-800 font-medium flex items-center gap-2"
             >
               <AlertCircle className="w-4 h-4 shrink-0" />
               <span>{error}</span>
@@ -143,8 +143,8 @@ export const UserFormModal: React.FC<UserFormModalProps> = ({
           )}
 
           {/* Username */}
-          <div className="space-y-1.5">
-            <label htmlFor="staff_username" className="block text-xs font-semibold text-slate-700">
+          <div className="space-y-1">
+            <label htmlFor="staff_username" className="block text-xs font-mono font-semibold uppercase text-zinc-700">
               Username <span className="text-red-500">*</span>
             </label>
             <input
@@ -157,13 +157,13 @@ export const UserFormModal: React.FC<UserFormModalProps> = ({
               value={username}
               onChange={(e) => setUsername(e.target.value)}
               placeholder="e.g. jdelacruz"
-              className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition disabled:bg-slate-100 disabled:text-slate-500 font-mono"
+              className="w-full px-3 py-1.5 text-xs sm:text-sm border border-zinc-300 rounded-none focus:ring-1 focus:ring-zinc-900 focus:border-zinc-900 outline-none transition-colors disabled:bg-zinc-100 disabled:text-zinc-500 font-mono"
             />
           </div>
 
           {/* Full Name */}
-          <div className="space-y-1.5">
-            <label htmlFor="staff_fullname" className="block text-xs font-semibold text-slate-700">
+          <div className="space-y-1">
+            <label htmlFor="staff_fullname" className="block text-xs font-mono font-semibold uppercase text-zinc-700">
               Full Name <span className="text-red-500">*</span>
             </label>
             <input
@@ -175,13 +175,13 @@ export const UserFormModal: React.FC<UserFormModalProps> = ({
               value={fullName}
               onChange={(e) => setFullName(e.target.value)}
               placeholder="e.g. Juan Dela Cruz"
-              className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition"
+              className="w-full px-3 py-1.5 text-xs sm:text-sm border border-zinc-300 rounded-none focus:ring-1 focus:ring-zinc-900 focus:border-zinc-900 outline-none transition-colors"
             />
           </div>
 
           {/* Password */}
-          <div className="space-y-1.5">
-            <label htmlFor="staff_password" className="block text-xs font-semibold text-slate-700">
+          <div className="space-y-1">
+            <label htmlFor="staff_password" className="block text-xs font-mono font-semibold uppercase text-zinc-700">
               {isEditing ? 'New Password (leave blank to keep unchanged)' : 'Password'} {!isEditing && <span className="text-red-500">*</span>}
             </label>
             <input
@@ -193,13 +193,13 @@ export const UserFormModal: React.FC<UserFormModalProps> = ({
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder={isEditing ? '••••••••' : 'Enter secure password'}
-              className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition font-mono"
+              className="w-full px-3 py-1.5 text-xs sm:text-sm border border-zinc-300 rounded-none focus:ring-1 focus:ring-zinc-900 focus:border-zinc-900 outline-none transition-colors font-mono"
             />
           </div>
 
           {/* Role selector */}
-          <div className="space-y-1.5">
-            <label htmlFor="staff_role" className="block text-xs font-semibold text-slate-700">
+          <div className="space-y-1">
+            <label htmlFor="staff_role" className="block text-xs font-mono font-semibold uppercase text-zinc-700">
               Staff Role <span className="text-red-500">*</span>
             </label>
             <select
@@ -208,7 +208,7 @@ export const UserFormModal: React.FC<UserFormModalProps> = ({
               aria-label="Staff Role"
               value={role}
               onChange={(e) => setRole(e.target.value as UserRole)}
-              className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition"
+              className="w-full px-3 py-1.5 text-xs sm:text-sm font-mono border border-zinc-300 rounded-none bg-white text-zinc-900 focus:ring-1 focus:ring-zinc-900 focus:border-zinc-900 outline-none transition-colors"
             >
               {ROLES.map((r) => (
                 <option key={r} value={r}>
@@ -220,34 +220,34 @@ export const UserFormModal: React.FC<UserFormModalProps> = ({
 
           {/* Active Status (if editing) */}
           {isEditing && (
-            <div className="flex items-center gap-2 pt-1">
+            <div className="flex items-center gap-2 pt-1 font-mono">
               <input
                 id="staff_active"
                 name="staff_active"
                 type="checkbox"
                 checked={isActive}
                 onChange={(e) => setIsActive(e.target.checked)}
-                className="w-4 h-4 text-blue-600 rounded border-slate-300 focus:ring-blue-500"
+                className="w-4 h-4 text-zinc-900 rounded-none border-zinc-300 focus:ring-0"
               />
-              <label htmlFor="staff_active" className="text-xs font-semibold text-slate-700 select-none">
+              <label htmlFor="staff_active" className="text-xs text-zinc-800 select-none cursor-pointer">
                 Active Account (enabled for workstation login)
               </label>
             </div>
           )}
 
-          <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-200">
+          <div className="flex items-center justify-end gap-2 pt-3 border-t border-zinc-200">
             <button
               type="button"
               onClick={onClose}
               disabled={isSubmitting}
-              className="px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-100 rounded-lg border border-slate-300 transition-colors cursor-pointer"
+              className="px-3.5 py-1.5 text-xs font-mono font-medium uppercase tracking-wider text-zinc-800 hover:bg-zinc-100 rounded-none border border-zinc-300 transition-colors cursor-pointer"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={isSubmitting}
-              className="inline-flex items-center gap-2 px-5 py-2 text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-lg shadow-sm transition-colors disabled:opacity-50 cursor-pointer"
+              className="inline-flex items-center gap-1.5 px-4 py-1.5 text-xs font-mono font-semibold uppercase tracking-wider text-white bg-zinc-900 hover:bg-black rounded-none transition-colors disabled:opacity-50 cursor-pointer shadow-none"
             >
               {isSubmitting ? (
                 <>

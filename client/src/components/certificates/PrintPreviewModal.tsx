@@ -27,6 +27,8 @@ export interface PrintPreviewModalProps {
     is_oic_signing?: number | boolean;
   };
   issuance?: SingleIssuanceResponse | null;
+  barangayLogoUrl?: string;
+  cityLogoUrl?: string;
   onSuccess?: (payload: PrintableIssuancePayload) => void;
 }
 
@@ -37,6 +39,8 @@ export const PrintPreviewModal: React.FC<PrintPreviewModalProps> = ({
   createPayload,
   previewData,
   issuance,
+  barangayLogoUrl,
+  cityLogoUrl,
   onSuccess
 }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -121,52 +125,52 @@ export const PrintPreviewModal: React.FC<PrintPreviewModalProps> = ({
 
   return (
     <div
-      className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/70 backdrop-blur-sm flex items-start justify-center p-2 sm:p-4 md:p-6"
+      className="fixed inset-0 z-50 overflow-y-auto bg-black/70 flex items-start justify-center p-2 sm:p-4 md:p-6"
       data-testid="print-preview-modal"
     >
-      <div className="relative bg-slate-100 rounded-2xl shadow-2xl w-full max-w-5xl flex flex-col my-auto border border-slate-300 overflow-hidden max-h-[95vh]">
+      <div className="relative bg-zinc-100 rounded-none shadow-none w-full max-w-5xl flex flex-col my-auto border border-zinc-400 overflow-hidden max-h-[95vh]">
         {/* Modal Header (Hidden during print) */}
-        <div className="no-print flex items-center justify-between px-6 py-4 bg-white border-b border-slate-200">
+        <div className="no-print flex items-center justify-between px-5 py-3.5 bg-white border-b border-zinc-200">
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-emerald-100 text-emerald-700 rounded-lg">
+            <div className="p-2 bg-zinc-100 text-zinc-800 rounded-none border border-zinc-200">
               <Printer className="w-5 h-5" />
             </div>
             <div>
-              <h2 className="text-base font-bold text-slate-900">
+              <h2 className="text-sm font-bold text-zinc-950 uppercase tracking-tight">
                 {isReprint ? 'Reprint / Inspection View' : 'Live Interactive Print Preview'}
               </h2>
               <div className="flex items-center gap-2 mt-0.5">
-                <span className="text-xs text-slate-500">Official Standard A4 Portrait (210mm × 297mm)</span>
-                <span className="text-xs font-mono font-semibold px-2 py-0.5 rounded bg-slate-100 text-slate-700 border border-slate-200">
+                <span className="text-xs text-zinc-500 font-mono">Standard A4 Portrait (210mm × 297mm)</span>
+                <span className="text-xs font-mono font-bold px-1.5 py-0.5 rounded-none bg-zinc-100 text-zinc-800 border border-zinc-300">
                   {activeControlNo}
                 </span>
               </div>
             </div>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
             <button
               type="button"
               onClick={onClose}
               data-testid="modal-close-button"
-              className="p-2 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors"
+              className="p-1.5 rounded-none text-zinc-500 hover:text-zinc-950 hover:bg-zinc-100 border border-transparent hover:border-zinc-300 transition-colors"
             >
-              <X className="w-5 h-5" />
+              <X className="w-4 h-4" />
             </button>
           </div>
         </div>
 
         {/* Error Notification (Hidden during print) */}
         {error && (
-          <div className="no-print mx-6 mt-4 p-3 bg-red-50 border border-red-200 text-red-700 text-xs rounded-lg flex items-center gap-2">
+          <div className="no-print mx-5 mt-3 p-3 bg-red-50 border border-red-200 text-red-800 text-xs font-mono rounded-none flex items-center gap-2">
             <AlertCircle className="w-4 h-4 flex-shrink-0" />
             <span>{error}</span>
           </div>
         )}
 
         {/* Document Scroll Container */}
-        <div className="flex-1 overflow-y-auto p-4 sm:p-6 flex justify-center bg-slate-200/70">
-          <div className="shadow-2xl bg-white border border-slate-300">
+        <div className="flex-1 overflow-y-auto p-4 sm:p-6 flex justify-center bg-zinc-200/80">
+          <div className="shadow-lg bg-white border border-zinc-300">
             <CertificatePrintSheet
               html={activeHtml}
               titleHeader={activeTitle}
@@ -177,24 +181,26 @@ export const PrintPreviewModal: React.FC<PrintPreviewModalProps> = ({
               signatoryPosition={activeSignatoryPos}
               isOicSigning={activeIsOic}
               residentName={activeResidentName}
+              barangayLogoUrl={barangayLogoUrl}
+              cityLogoUrl={cityLogoUrl}
             />
           </div>
         </div>
 
         {/* Modal Action Footer (Hidden during print) */}
-        <div className="no-print flex items-center justify-between px-6 py-4 bg-white border-t border-slate-200">
-          <div className="text-xs text-slate-500">
+        <div className="no-print flex items-center justify-between px-5 py-3.5 bg-white border-t border-zinc-200 font-mono">
+          <div className="text-[11px] text-zinc-500">
             {isReprint
-              ? 'Historical snapshot. Reprints will maintain originally recorded signatory data.'
+              ? 'Historical snapshot. Reprints maintain originally recorded signatory data.'
               : 'Submitting will assign a permanent control number and record an immutable audit event.'}
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
             <button
               type="button"
               onClick={onClose}
               disabled={isSubmitting}
-              className="px-4 py-2 rounded-lg border border-slate-300 text-xs font-bold text-slate-700 hover:bg-slate-50 transition-colors disabled:opacity-50"
+              className="px-3.5 py-1.5 rounded-none border border-zinc-300 text-xs font-mono font-medium uppercase tracking-wider text-zinc-800 hover:bg-zinc-100 transition-colors disabled:opacity-50"
             >
               Close
             </button>
@@ -203,16 +209,16 @@ export const PrintPreviewModal: React.FC<PrintPreviewModalProps> = ({
               onClick={handleIssueAndPrint}
               disabled={isSubmitting}
               data-testid="issue-and-print-button"
-              className="inline-flex items-center gap-2 px-5 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition-colors disabled:opacity-50 shadow-sm"
+              className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-none bg-zinc-900 hover:bg-black text-white text-xs font-mono font-semibold uppercase tracking-wider transition-colors disabled:opacity-50 shadow-none"
             >
               {isSubmitting ? (
                 <>
-                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
                   <span>Processing Issuance...</span>
                 </>
               ) : (
                 <>
-                  <Printer className="w-4 h-4" />
+                  <Printer className="w-3.5 h-3.5" />
                   <span>{isReprint ? 'Print Certificate' : 'Issue & Print'}</span>
                 </>
               )}

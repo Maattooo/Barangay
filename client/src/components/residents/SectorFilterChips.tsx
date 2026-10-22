@@ -27,55 +27,55 @@ export const SECTOR_DEFINITIONS: SectorDefinition[] = [
     key: 'senior',
     label: 'Senior Citizen',
     icon: Award,
-    activeClass: 'bg-blue-600 text-white border-blue-600 shadow-sm'
+    activeClass: 'bg-zinc-900 text-white border-zinc-900 shadow-none'
   },
   {
     key: 'pwd',
     label: 'PWD',
     icon: Accessibility,
-    activeClass: 'bg-purple-600 text-white border-purple-600 shadow-sm'
+    activeClass: 'bg-zinc-900 text-white border-zinc-900 shadow-none'
   },
   {
     key: '4ps',
     label: '4Ps Beneficiary',
     icon: Landmark,
-    activeClass: 'bg-emerald-600 text-white border-emerald-600 shadow-sm'
+    activeClass: 'bg-zinc-900 text-white border-zinc-900 shadow-none'
   },
   {
     key: 'solo_parent',
     label: 'Solo Parent',
     icon: UserCheck,
-    activeClass: 'bg-rose-600 text-white border-rose-600 shadow-sm'
+    activeClass: 'bg-zinc-900 text-white border-zinc-900 shadow-none'
   },
   {
     key: 'indigent',
     label: 'Indigent',
     icon: HeartHandshake,
-    activeClass: 'bg-amber-600 text-white border-amber-600 shadow-sm'
+    activeClass: 'bg-zinc-900 text-white border-zinc-900 shadow-none'
   },
   {
     key: 'voter',
     label: 'Registered Voter',
     icon: Vote,
-    activeClass: 'bg-teal-600 text-white border-teal-600 shadow-sm'
+    activeClass: 'bg-zinc-900 text-white border-zinc-900 shadow-none'
   },
   {
     key: 'youth',
     label: 'Youth / SK',
     icon: Sparkles,
-    activeClass: 'bg-indigo-600 text-white border-indigo-600 shadow-sm'
+    activeClass: 'bg-zinc-900 text-white border-zinc-900 shadow-none'
   },
   {
     key: 'ofw',
     label: 'OFW',
     icon: Plane,
-    activeClass: 'bg-sky-600 text-white border-sky-600 shadow-sm'
+    activeClass: 'bg-zinc-900 text-white border-zinc-900 shadow-none'
   },
   {
     key: 'osy',
     label: 'Out-of-School Youth (OSY)',
     icon: BookX,
-    activeClass: 'bg-slate-700 text-white border-slate-700 shadow-sm'
+    activeClass: 'bg-zinc-900 text-white border-zinc-900 shadow-none'
   }
 ];
 
@@ -96,9 +96,9 @@ export const SectorFilterChips: React.FC<SectorFilterChipsProps> = ({
 
   return (
     <div className={`space-y-2 ${className}`} data-testid="sector-filter-chips-bar">
-      <div className="flex items-center justify-between text-xs font-semibold text-slate-500 uppercase tracking-wider">
+      <div className="flex items-center justify-between text-[11px] font-mono font-semibold text-zinc-500 uppercase tracking-wider">
         <div className="flex items-center gap-1.5">
-          <Filter className="w-3.5 h-3.5 text-slate-400" />
+          <Filter className="w-3.5 h-3.5 text-zinc-400" />
           <span>Combinatorial Sector Filters ({selectedSectors.length} active)</span>
         </div>
         {hasActiveSectors && (
@@ -106,7 +106,7 @@ export const SectorFilterChips: React.FC<SectorFilterChipsProps> = ({
             type="button"
             onClick={onClearSectors}
             data-testid="clear-sectors-btn"
-            className="flex items-center gap-1 text-xs font-medium text-red-600 hover:text-red-700 transition-colors px-2 py-0.5 rounded hover:bg-red-50"
+            className="flex items-center gap-1 text-[11px] font-mono font-medium text-red-600 hover:text-white hover:bg-red-600 transition-colors px-2 py-0.5 rounded-none border border-red-200 uppercase tracking-wider"
           >
             <X className="w-3.5 h-3.5" />
             <span>Clear All Sectors</span>
@@ -114,7 +114,7 @@ export const SectorFilterChips: React.FC<SectorFilterChipsProps> = ({
         )}
       </div>
 
-      <div className="flex flex-wrap items-center gap-2">
+      <div className="flex flex-wrap items-center gap-1.5">
         {SECTOR_DEFINITIONS.map((sector) => {
           const isActive = selectedSectors.includes(sector.key);
           const Icon = sector.icon;
@@ -127,16 +127,16 @@ export const SectorFilterChips: React.FC<SectorFilterChipsProps> = ({
               aria-pressed={isActive}
               data-testid={`chip-${sector.key}`}
               onClick={() => onToggleSector(sector.key)}
-              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border transition-all duration-150 cursor-pointer ${
+              className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-none text-xs font-mono font-medium border transition-colors cursor-pointer ${
                 isActive
-                  ? sector.activeClass
-                  : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50 hover:border-slate-300 shadow-xs'
+                  ? 'bg-zinc-900 text-white border-zinc-900'
+                  : 'bg-white text-zinc-700 border-zinc-300 hover:bg-zinc-100 hover:border-zinc-400'
               }`}
             >
               {isActive ? (
                 <Check className="w-3.5 h-3.5 stroke-[2.5]" />
               ) : (
-                <Icon className="w-3.5 h-3.5 text-slate-500" />
+                <Icon className="w-3.5 h-3.5 text-zinc-500" />
               )}
               <span>{sector.label}</span>
             </button>

@@ -22,6 +22,10 @@ export interface CertificatePrintSheetProps {
   provinceName?: string;
   residentName?: string;
   resident_name?: string;
+  barangayLogoUrl?: string;
+  barangay_logo_url?: string;
+  cityLogoUrl?: string;
+  city_logo_url?: string;
 }
 
 export const CertificatePrintSheet: React.FC<CertificatePrintSheetProps> = (props) => {
@@ -45,10 +49,16 @@ export const CertificatePrintSheet: React.FC<CertificatePrintSheetProps> = (prop
     municipalityName = 'LOS BAÑOS',
     provinceName = 'LAGUNA',
     residentName,
-    resident_name
+    resident_name,
+    barangayLogoUrl,
+    barangay_logo_url,
+    cityLogoUrl,
+    city_logo_url
   } = props;
 
   // Resolve aliases
+  const activeBarangayLogo = barangayLogoUrl || barangay_logo_url;
+  const activeCityLogo = cityLogoUrl || city_logo_url;
   const activeTitle = titleHeader || title_header || 'BARANGAY CLEARANCE';
   const rawSidebarVal = showOfficialsSidebar !== undefined ? showOfficialsSidebar : show_officials_sidebar;
   const showSidebar = Boolean(rawSidebarVal === 1 || rawSidebarVal === true || String(rawSidebarVal) === '1');
@@ -116,14 +126,24 @@ export const CertificatePrintSheet: React.FC<CertificatePrintSheetProps> = (prop
       }}
     >
       {/* Official Header */}
-      <header className="border-b-2 border-slate-900 pb-3 mb-4 text-center relative" data-testid="certificate-header">
-        {/* Barangay Seal Placeholder */}
-        <div className="absolute left-0 top-0 w-16 h-16 rounded-full border-2 border-slate-800 flex items-center justify-center bg-slate-50 text-[10px] font-bold uppercase text-slate-700 tracking-tighter text-center p-1">
-          Barangay Seal
+      <header className="border-b-2 border-slate-900 pb-3 mb-4 text-center relative min-h-[70px]" data-testid="certificate-header">
+        {/* Left: Barangay Seal */}
+        <div className="absolute left-0 top-0 w-16 h-16 flex items-center justify-center">
+          {activeBarangayLogo ? (
+            <img
+              src={activeBarangayLogo}
+              alt="Barangay Seal"
+              className="w-16 h-16 object-contain"
+            />
+          ) : (
+            <div className="w-16 h-16 rounded-full border-2 border-slate-800 flex items-center justify-center bg-slate-50 text-[10px] font-bold uppercase text-slate-700 tracking-tighter text-center p-1">
+              Barangay Seal
+            </div>
+          )}
         </div>
 
         {/* Header Text */}
-        <div className="space-y-0.5">
+        <div className="space-y-0.5 px-20">
           <p className="text-xs uppercase tracking-widest text-slate-600 font-semibold">Republic of the Philippines</p>
           <p className="text-xs uppercase tracking-wider text-slate-700">Province of {provinceName}</p>
           <p className="text-xs uppercase tracking-wider text-slate-700">Municipality of {municipalityName}</p>
@@ -133,13 +153,22 @@ export const CertificatePrintSheet: React.FC<CertificatePrintSheetProps> = (prop
           <p className="text-xs italic text-slate-700 font-medium">Office of the Punong Barangay</p>
         </div>
 
-        {/* Top-Right Control Number */}
-        {activeControlNo && (
-          <div className="absolute right-0 top-0 text-right" data-testid="control-number-display">
-            <span className="text-[10px] font-mono text-slate-500 uppercase tracking-wider">Control No:</span>
-            <p className="text-xs font-mono font-bold text-slate-800">{activeControlNo}</p>
-          </div>
-        )}
+        {/* Right: City/Municipal Seal and Control Number */}
+        <div className="absolute right-0 top-0 flex flex-col items-end gap-1">
+          {activeCityLogo && (
+            <img
+              src={activeCityLogo}
+              alt="City Seal"
+              className="w-12 h-12 object-contain"
+            />
+          )}
+          {activeControlNo && (
+            <div className="text-right" data-testid="control-number-display">
+              <span className="text-[10px] font-mono text-slate-500 uppercase tracking-wider">Control No:</span>
+              <p className="text-xs font-mono font-bold text-slate-800">{activeControlNo}</p>
+            </div>
+          )}
+        </div>
       </header>
 
       {/* Dynamic 2-Column or Full-Width Layout */}

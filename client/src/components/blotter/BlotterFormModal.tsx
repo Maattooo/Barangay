@@ -4,6 +4,19 @@ import api from '../../services/api';
 import { CreateBlotterInput, BlotterStatus } from '../../types/admin';
 import { Resident } from '../../types/resident';
 
+const COMMON_INCIDENT_TYPES = [
+  'Boundary Dispute',
+  'Noise Barrage / Disturbance of Peace',
+  'Physical Injury / Altercation',
+  'Unjust Vexation',
+  'Property Damage',
+  'Threats / Harassment',
+  'Debt / Financial Conflict',
+  'Slander / Oral Defamation',
+  'Pet Nuisance / Animal Attack',
+  'Curfew Violation'
+];
+
 interface BlotterFormModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -34,8 +47,35 @@ export const BlotterFormModal: React.FC<BlotterFormModalProps> = ({
   const [respondentResults, setRespondentResults] = useState<Resident[]>([]);
   const [isSearchingRespondent, setIsSearchingRespondent] = useState(false);
 
+  const [activeField, setActiveField] = useState<'complainant' | 'respondent' | null>(null);
+
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [puroks, setPuroks] = useState<string[]>([]);
+  const [streets, setStreets] = useState<string[]>([]);
+
+  // Fetch configured puroks and streets for incident location suggestions
+  useEffect(() => {
+    let isMounted = true;
+    api.getSystemInfo().then((info) => {
+      if (!isMounted) return;
+      const puroksRaw = typeof info?.settings?.puroks_json === 'string' ? info.settings.puroks_json : '';
+      if (puroksRaw) {
+        try {
+          const p = JSON.parse(puroksRaw);
+          if (Array.isArray(p)) setPuroks(p);
+        } catch {}
+      }
+      const streetsRaw = typeof info?.settings?.streets_json === 'string' ? info.settings.streets_json : '';
+      if (streetsRaw) {
+        try {
+          const s = JSON.parse(streetsRaw);
+          if (Array.isArray(s)) setStreets(s);
+        } catch {}
+      }
+    }).catch(() => {});
+    return () => { isMounted = false; };
+  }, []);
 
   // Debounced search for Complainant
   useEffect(() => {
@@ -91,6 +131,7 @@ export const BlotterFormModal: React.FC<BlotterFormModalProps> = ({
     setComplainantResults([]);
     setRespondentQuery('');
     setRespondentResults([]);
+    setActiveField(null);
     setError(null);
   };
 
@@ -98,16 +139,18 @@ export const BlotterFormModal: React.FC<BlotterFormModalProps> = ({
     const fullName = `${resident.first_name} ${resident.middle_name ? resident.middle_name + ' ' : ''}${resident.last_name}${resident.suffix ? ' ' + resident.suffix : ''}`.trim();
     setComplainantName(fullName);
     setComplainantId(resident.id);
-    setComplainantResults([]);
     setComplainantQuery('');
+    setComplainantResults([]);
+    setActiveField(null);
   };
 
   const handleSelectRespondent = (resident: Resident) => {
     const fullName = `${resident.first_name} ${resident.middle_name ? resident.middle_name + ' ' : ''}${resident.last_name}${resident.suffix ? ' ' + resident.suffix : ''}`.trim();
     setRespondentName(fullName);
     setRespondentId(resident.id);
-    setRespondentResults([]);
     setRespondentQuery('');
+    setRespondentResults([]);
+    setActiveField(null);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -131,13 +174,49 @@ export const BlotterFormModal: React.FC<BlotterFormModalProps> = ({
       return;
     }
 
+    let finalComplainantId = complainantId;
+    let finalRespondentId = respondentId;
+
+    // Automatic resident linking fallback if user typed exact registered name without clicking suggestion
+    if (!finalRespondentId && respondentName.trim().length >= 2) {
+      try {
+        const res = await api.getResidents({ search: respondentName.trim(), limit: 5 });
+        const exact = res.data.find((r) => {
+          const fn = `${r.first_name} ${r.middle_name ? r.middle_name + ' ' : ''}${r.last_name}${r.suffix ? ' ' + r.suffix : ''}`.trim().toLowerCase();
+          const altFn = `${r.last_name}, ${r.first_name}`.toLowerCase();
+          const shortFn = `${r.first_name} ${r.last_name}`.toLowerCase();
+          const typed = respondentName.trim().toLowerCase();
+          return fn === typed || altFn === typed || shortFn === typed;
+        });
+        if (exact) {
+          finalRespondentId = exact.id;
+        }
+      } catch {}
+    }
+
+    if (!finalComplainantId && complainantName.trim().length >= 2) {
+      try {
+        const res = await api.getResidents({ search: complainantName.trim(), limit: 5 });
+        const exact = res.data.find((r) => {
+          const fn = `${r.first_name} ${r.middle_name ? r.middle_name + ' ' : ''}${r.last_name}${r.suffix ? ' ' + r.suffix : ''}`.trim().toLowerCase();
+          const altFn = `${r.last_name}, ${r.first_name}`.toLowerCase();
+          const shortFn = `${r.first_name} ${r.last_name}`.toLowerCase();
+          const typed = complainantName.trim().toLowerCase();
+          return fn === typed || altFn === typed || shortFn === typed;
+        });
+        if (exact) {
+          finalComplainantId = exact.id;
+        }
+      } catch {}
+    }
+
     const payload: CreateBlotterInput = {
       complainant_name: complainantName.trim(),
-      complainant_id: complainantId,
+      complainant_id: finalComplainantId,
       respondent_name: respondentName.trim(),
-      respondent_id: respondentId,
+      respondent_id: finalRespondentId,
       incident_type: incidentType.trim(),
-      incident_location: incidentLocation.trim(),
+      incident_location: incidentLocation.trim() || undefined,
       incident_details: incidentDetails.trim(),
       date_incident: dateIncident || null,
       status
@@ -163,160 +242,282 @@ export const BlotterFormModal: React.FC<BlotterFormModalProps> = ({
       role="dialog"
       aria-modal="true"
       aria-labelledby="blotter-modal-title"
-      className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4"
+      className="fixed inset-0 z-50 overflow-y-auto bg-black/60 flex items-center justify-center p-4"
     >
-      <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full border border-slate-200 overflow-hidden my-8 animate-in fade-in duration-150">
-        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 bg-slate-50">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-amber-100 text-amber-700 rounded-lg">
-              <ShieldAlert className="w-5 h-5" />
+      <div className="bg-white rounded-none shadow-none max-w-2xl w-full border border-zinc-300 overflow-hidden my-8">
+        <div className="flex items-center justify-between px-5 py-3.5 border-b border-zinc-200 bg-zinc-50">
+          <div className="flex items-center gap-2.5">
+            <div className="p-1.5 bg-amber-100 text-amber-800 rounded-none border border-amber-300">
+              <ShieldAlert className="w-4 h-4" />
             </div>
             <div>
-              <h2 id="blotter-modal-title" className="text-base font-bold text-slate-900">
+              <h2 id="blotter-modal-title" className="text-sm font-bold text-zinc-950 uppercase tracking-tight">
                 Record New Blotter Case
               </h2>
-              <p className="text-xs text-slate-500">
-                Katarungang Pambarangay Incident Entry &amp; Resident Gatekeeper Linkage
+              <p className="text-[11px] font-mono text-zinc-500 uppercase">
+                Katarungang Pambarangay Incident Entry &amp; Gatekeeper Linkage
               </p>
             </div>
           </div>
           <button
             onClick={onClose}
             aria-label="Close modal"
-            className="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100 transition-colors"
+            className="p-1 text-zinc-400 hover:text-zinc-700 rounded-none hover:bg-zinc-200 transition-colors"
           >
-            <X className="w-5 h-5" />
+            <X className="w-4 h-4" />
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-6 space-y-4 max-h-[calc(85vh-120px)] overflow-y-auto">
+        <form onSubmit={handleSubmit} className="p-5 space-y-4 max-h-[calc(85vh-120px)] overflow-y-auto">
           {error && (
             <div
               role="alert"
-              className="p-3 bg-red-50 border border-red-200 rounded-lg text-xs text-red-700 font-medium"
+              className="p-2.5 bg-red-50 border border-red-200 rounded-none text-xs text-red-800 font-medium font-mono"
             >
               {error}
             </div>
           )}
 
           {/* Complainant Section */}
-          <div className="space-y-1.5">
-            <label htmlFor="complainant_name" className="block text-xs font-semibold text-slate-700">
-              Complainant Full Name <span className="text-red-500">*</span>
-            </label>
+          <div className="space-y-1">
+            <div className="flex items-center justify-between">
+              <label htmlFor="complainant_name" className="block text-xs font-mono font-semibold uppercase text-zinc-700">
+                Complainant Full Name <span className="text-red-500">*</span>
+              </label>
+              {isSearchingComplainant && (
+                <span className="text-[10px] font-mono text-zinc-500 flex items-center gap-1">
+                  <Loader2 className="w-3 h-3 animate-spin" /> Searching registry...
+                </span>
+              )}
+            </div>
             <input
               id="complainant_name"
               name="complainant_name"
               type="text"
               required
               value={complainantName}
-              onChange={(e) => setComplainantName(e.target.value)}
-              placeholder="e.g. Maria Santos Dela Cruz"
-              className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500 outline-none transition"
+              onChange={(e) => {
+                const val = e.target.value;
+                setComplainantName(val);
+                if (complainantId) setComplainantId(null);
+                setComplainantQuery(val);
+                setActiveField('complainant');
+              }}
+              onFocus={() => {
+                setActiveField('complainant');
+                if (complainantName && !complainantId) {
+                  setComplainantQuery(complainantName);
+                }
+              }}
+              placeholder="e.g. Maria Santos Dela Cruz (Type to search registered residents)"
+              className="w-full px-3 py-1.5 text-xs sm:text-sm border border-zinc-300 rounded-none focus:ring-1 focus:ring-zinc-900 focus:border-zinc-900 outline-none transition-colors"
             />
-            {/* Search resident helper */}
+
+            {/* Quick helper input for test automation and exact masterlist lookups */}
             <div className="relative pt-1">
-              <div className="flex items-center gap-2">
-                <Search className="w-3.5 h-3.5 text-slate-400" />
+              <div className="flex items-center gap-1.5">
+                <Search className="w-3.5 h-3.5 text-zinc-400" />
                 <input
                   type="text"
-                  placeholder="Or search resident masterlist to autofill..."
+                  placeholder="Or lookup registered resident inhabitant..."
                   value={complainantQuery}
-                  onChange={(e) => setComplainantQuery(e.target.value)}
-                  className="w-full text-xs text-slate-600 border-b border-dashed border-slate-300 focus:border-amber-500 outline-none pb-0.5"
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    setComplainantQuery(val);
+                    setActiveField('complainant');
+                  }}
+                  onFocus={() => setActiveField('complainant')}
+                  className="w-full px-2 py-1 text-xs border border-zinc-200 rounded-none focus:ring-1 focus:ring-zinc-900 focus:border-zinc-900 outline-none"
                 />
-                {isSearchingComplainant && <Loader2 className="w-3.5 h-3.5 text-amber-600 animate-spin" />}
               </div>
-              {complainantResults.length > 0 && (
-                <ul className="absolute z-10 w-full mt-1 bg-white border border-slate-200 rounded-lg shadow-lg max-h-40 overflow-y-auto divide-y divide-slate-100">
+
+              {activeField === 'complainant' && complainantResults.length > 0 && !complainantId && (
+                <ul
+                  role="list"
+                  className="absolute z-20 w-full mt-1 bg-white border border-zinc-300 rounded-none shadow-md divide-y divide-zinc-100 max-h-40 overflow-y-auto font-mono text-xs list-none p-0 m-0"
+                >
                   {complainantResults.map((r) => (
                     <li
                       key={r.id}
+                      role="listitem"
                       onClick={() => handleSelectComplainant(r)}
-                      className="px-3 py-1.5 text-xs text-slate-700 hover:bg-amber-50 hover:text-amber-800 cursor-pointer flex justify-between"
+                      className="w-full px-3 py-1.5 text-left hover:bg-zinc-100 flex items-center justify-between cursor-pointer transition-colors"
                     >
-                      <span className="font-medium">
-                        {r.first_name} {r.last_name}
+                      <div>
+                        <span className="font-sans font-medium text-zinc-900 block">
+                          {r.last_name}, {r.first_name} {r.middle_name || ''}
+                        </span>
+                        <span className="text-[10px] text-zinc-500">
+                          {r.purok} &bull; Age {r.age}
+                        </span>
+                      </div>
+                      <span className="text-[10px] font-mono px-2 py-0.5 bg-zinc-900 text-white uppercase tracking-wider">
+                        Link #{r.id}
                       </span>
-                      <span className="text-slate-400">{r.purok}</span>
                     </li>
                   ))}
                 </ul>
+              )}
+
+              {complainantId && (
+                <div className="flex items-center gap-1.5 text-[11px] font-mono text-emerald-800 bg-emerald-50 border border-emerald-300 p-2 mt-1">
+                  <Check className="w-3.5 h-3.5 text-emerald-600" />
+                  <span>Linked to Resident Record #{complainantId}</span>
+                  <button
+                    type="button"
+                    onClick={() => setComplainantId(null)}
+                    className="text-zinc-500 hover:text-red-600 underline ml-auto"
+                  >
+                    Unlink
+                  </button>
+                </div>
               )}
             </div>
           </div>
 
           {/* Respondent Section */}
-          <div className="space-y-1.5">
-            <label htmlFor="respondent_name" className="block text-xs font-semibold text-slate-700">
-              Respondent Full Name <span className="text-red-500">*</span>
-            </label>
+          <div className="space-y-1">
+            <div className="flex items-center justify-between">
+              <label htmlFor="respondent_name" className="block text-xs font-mono font-semibold uppercase text-zinc-700">
+                Respondent Full Name <span className="text-red-500">*</span>
+              </label>
+              {isSearchingRespondent && (
+                <span className="text-[10px] font-mono text-zinc-500 flex items-center gap-1">
+                  <Loader2 className="w-3 h-3 animate-spin" /> Searching registry...
+                </span>
+              )}
+            </div>
             <input
               id="respondent_name"
               name="respondent_name"
               type="text"
               required
               value={respondentName}
-              onChange={(e) => setRespondentName(e.target.value)}
-              placeholder="e.g. Pedro Reyes Penduko"
-              className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500 outline-none transition"
+              onChange={(e) => {
+                const val = e.target.value;
+                setRespondentName(val);
+                if (respondentId) setRespondentId(null);
+                setRespondentQuery(val);
+                setActiveField('respondent');
+              }}
+              onFocus={() => {
+                setActiveField('respondent');
+                if (respondentName && !respondentId) {
+                  setRespondentQuery(respondentName);
+                }
+              }}
+              placeholder="e.g. Juan Perez Santos (Type to search registered residents)"
+              className="w-full px-3 py-1.5 text-xs sm:text-sm border border-zinc-300 rounded-none focus:ring-1 focus:ring-zinc-900 focus:border-zinc-900 outline-none transition-colors"
             />
-            {respondentId && (
-              <p className="text-[11px] text-emerald-600 font-medium flex items-center gap-1">
-                <Check className="w-3 h-3" /> Linked to Resident Registry (ID: {respondentId}) — Certificate Gatekeeper active.
-              </p>
-            )}
-            {/* Search resident helper */}
+
+            {/* Quick helper input for test automation and exact masterlist lookups */}
             <div className="relative pt-1">
-              <div className="flex items-center gap-2">
-                <Search className="w-3.5 h-3.5 text-slate-400" />
+              <div className="flex items-center gap-1.5">
+                <Search className="w-3.5 h-3.5 text-zinc-400" />
                 <input
                   type="text"
-                  placeholder="Or search resident masterlist to link respondent ID..."
+                  placeholder="Search resident masterlist to link respondent ID..."
                   value={respondentQuery}
-                  onChange={(e) => setRespondentQuery(e.target.value)}
-                  className="w-full text-xs text-slate-600 border-b border-dashed border-slate-300 focus:border-amber-500 outline-none pb-0.5"
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    setRespondentQuery(val);
+                    setActiveField('respondent');
+                  }}
+                  onFocus={() => setActiveField('respondent')}
+                  className="w-full px-2 py-1 text-xs border border-zinc-200 rounded-none focus:ring-1 focus:ring-zinc-900 focus:border-zinc-900 outline-none"
                 />
-                {isSearchingRespondent && <Loader2 className="w-3.5 h-3.5 text-amber-600 animate-spin" />}
               </div>
-              {respondentResults.length > 0 && (
-                <ul className="absolute z-10 w-full mt-1 bg-white border border-slate-200 rounded-lg shadow-lg max-h-40 overflow-y-auto divide-y divide-slate-100">
+
+              {activeField === 'respondent' && respondentResults.length > 0 && !respondentId && (
+                <ul
+                  role="list"
+                  className="absolute z-20 w-full mt-1 bg-white border border-zinc-300 rounded-none shadow-md divide-y divide-zinc-100 max-h-40 overflow-y-auto font-mono text-xs list-none p-0 m-0"
+                >
                   {respondentResults.map((r) => (
                     <li
                       key={r.id}
+                      role="listitem"
                       onClick={() => handleSelectRespondent(r)}
-                      className="px-3 py-1.5 text-xs text-slate-700 hover:bg-amber-50 hover:text-amber-800 cursor-pointer flex justify-between"
+                      className="w-full px-3 py-1.5 text-left hover:bg-zinc-100 flex items-center justify-between cursor-pointer transition-colors"
                     >
-                      <span className="font-medium">
-                        {r.first_name} {r.last_name}
+                      <div>
+                        <span className="font-sans font-medium text-zinc-900 block">
+                          {r.last_name}, {r.first_name} {r.middle_name || ''}
+                        </span>
+                        <span className="text-[10px] text-zinc-500">
+                          {r.purok} &bull; Age {r.age}
+                        </span>
+                      </div>
+                      <span className="text-[10px] font-mono px-2 py-0.5 bg-red-700 text-white uppercase tracking-wider font-semibold">
+                        Link &amp; Block Clearance
                       </span>
-                      <span className="text-slate-400">{r.purok}</span>
                     </li>
                   ))}
                 </ul>
               )}
+
+              {respondentId ? (
+                <div className="flex items-center gap-1.5 text-[11px] font-mono text-emerald-800 bg-emerald-50 border border-emerald-300 p-2 mt-1">
+                  <Check className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                  <span>Linked to Resident Registry (Record #{respondentId} - will be blocked from clearance issuance)</span>
+                  <button
+                    type="button"
+                    onClick={() => setRespondentId(null)}
+                    className="text-zinc-500 hover:text-red-600 underline ml-auto"
+                  >
+                    Unlink
+                  </button>
+                </div>
+              ) : respondentName.trim().length >= 2 ? (
+                <div className="p-2 bg-amber-50 border border-amber-200 text-amber-900 text-[11px] font-mono mt-1">
+                  ⚠️ Notice: Respondent is currently unlinked. To automatically block this person during Barangay Clearance requests, select them from the registered residents list above.
+                </div>
+              ) : null}
             </div>
           </div>
 
           {/* Incident Type & Status */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-1.5">
-              <label htmlFor="incident_type" className="block text-xs font-semibold text-slate-700">
-                Incident Type / Cause <span className="text-red-500">*</span>
-              </label>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="space-y-1">
+              <div className="flex items-center justify-between">
+                <label htmlFor="incident_type" className="block text-xs font-mono font-semibold uppercase text-zinc-700">
+                  Incident Type <span className="text-red-500">*</span>
+                </label>
+                <span className="text-[10px] font-mono text-zinc-600">Select or Type</span>
+              </div>
               <input
                 id="incident_type"
                 name="incident_type"
                 type="text"
                 required
+                list="incident-types-datalist"
                 value={incidentType}
                 onChange={(e) => setIncidentType(e.target.value)}
-                placeholder="e.g. Physical Injury, Boundary Dispute"
-                className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500 outline-none transition"
+                placeholder="e.g. Boundary Dispute, Noise Barrage"
+                className="w-full px-3 py-1.5 text-xs sm:text-sm border border-zinc-300 rounded-none focus:ring-1 focus:ring-zinc-900 focus:border-zinc-900 outline-none transition-colors"
               />
+              <datalist id="incident-types-datalist">
+                {COMMON_INCIDENT_TYPES.map((t) => (
+                  <option key={t} value={t} />
+                ))}
+              </datalist>
+              {/* Quick Preset Buttons */}
+              <div className="flex flex-wrap gap-1 pt-1">
+                {COMMON_INCIDENT_TYPES.slice(0, 4).map((type) => (
+                  <button
+                    key={type}
+                    type="button"
+                    onClick={() => setIncidentType(type)}
+                    className="px-1.5 py-0.5 text-[10px] font-mono border border-zinc-200 bg-zinc-50 hover:bg-zinc-100 hover:border-zinc-300 text-zinc-700 rounded-none transition-colors"
+                  >
+                    {type}
+                  </button>
+                ))}
+              </div>
             </div>
-            <div className="space-y-1.5">
-              <label htmlFor="status" className="block text-xs font-semibold text-slate-700">
+
+            <div className="space-y-1">
+              <label htmlFor="status" className="block text-xs font-mono font-semibold uppercase text-zinc-700">
                 Initial Status
               </label>
               <select
@@ -324,7 +525,7 @@ export const BlotterFormModal: React.FC<BlotterFormModalProps> = ({
                 name="status"
                 value={status}
                 onChange={(e) => setStatus(e.target.value as BlotterStatus)}
-                className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg bg-white focus:ring-2 focus:ring-amber-500 focus:border-amber-500 outline-none transition"
+                className="w-full px-3 py-1.5 text-xs sm:text-sm font-mono border border-zinc-300 rounded-none bg-white text-zinc-900 focus:ring-1 focus:ring-zinc-900 focus:border-zinc-900 outline-none transition-colors"
               >
                 <option value="Active">Active (Blocks Issuance)</option>
                 <option value="Under Mediation">Under Mediation (Blocks Issuance)</option>
@@ -336,39 +537,52 @@ export const BlotterFormModal: React.FC<BlotterFormModalProps> = ({
           </div>
 
           {/* Location & Date */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-1.5">
-              <label htmlFor="incident_location" className="block text-xs font-semibold text-slate-700">
-                Incident Location
-              </label>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="space-y-1">
+              <div className="flex items-center justify-between">
+                <label htmlFor="incident_location" className="block text-xs font-mono font-semibold uppercase text-zinc-700">
+                  Incident Location
+                </label>
+                <span className="text-[10px] font-mono text-zinc-600">Purok / Street Suggestion</span>
+              </div>
               <input
                 id="incident_location"
                 name="incident_location"
                 type="text"
+                list="incident-locations-datalist"
                 value={incidentLocation}
                 onChange={(e) => setIncidentLocation(e.target.value)}
-                placeholder="e.g. Purok 3 Basketball Court"
-                className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500 outline-none transition"
+                placeholder="e.g. Purok 4 Basketball Court"
+                className="w-full px-3 py-1.5 text-xs sm:text-sm border border-zinc-300 rounded-none focus:ring-1 focus:ring-zinc-900 focus:border-zinc-900 outline-none transition-colors"
               />
+              <datalist id="incident-locations-datalist">
+                {puroks.map((p) => (
+                  <option key={`purok-${p}`} value={p} />
+                ))}
+                {streets.map((s) => (
+                  <option key={`street-${s}`} value={s} />
+                ))}
+              </datalist>
             </div>
-            <div className="space-y-1.5">
-              <label htmlFor="date_incident" className="block text-xs font-semibold text-slate-700">
+
+            <div className="space-y-1">
+              <label htmlFor="date_incident" className="block text-xs font-mono font-semibold uppercase text-zinc-700">
                 Date of Incident
               </label>
               <input
                 id="date_incident"
                 name="date_incident"
-                type="date"
+                type="datetime-local"
                 value={dateIncident}
                 onChange={(e) => setDateIncident(e.target.value)}
-                className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500 outline-none transition"
+                className="w-full px-3 py-1.5 text-xs sm:text-sm font-mono border border-zinc-300 rounded-none bg-white focus:ring-1 focus:ring-zinc-900 focus:border-zinc-900 outline-none transition-colors"
               />
             </div>
           </div>
 
           {/* Details */}
-          <div className="space-y-1.5">
-            <label htmlFor="incident_details" className="block text-xs font-semibold text-slate-700">
+          <div className="space-y-1">
+            <label htmlFor="incident_details" className="block text-xs font-mono font-semibold uppercase text-zinc-700">
               Incident Details <span className="text-red-500">*</span>
             </label>
             <textarea
@@ -379,23 +593,23 @@ export const BlotterFormModal: React.FC<BlotterFormModalProps> = ({
               value={incidentDetails}
               onChange={(e) => setIncidentDetails(e.target.value)}
               placeholder="State narration of facts, events, and claims presented by the complainant..."
-              className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500 outline-none transition"
+              className="w-full px-3 py-1.5 text-xs sm:text-sm border border-zinc-300 rounded-none focus:ring-1 focus:ring-zinc-900 focus:border-zinc-900 outline-none transition-colors"
             />
           </div>
 
-          <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-200">
+          <div className="flex items-center justify-end gap-2 pt-3 border-t border-zinc-200">
             <button
               type="button"
               onClick={onClose}
               disabled={isSubmitting}
-              className="px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-100 rounded-lg border border-slate-300 transition-colors"
+              className="px-3.5 py-1.5 text-xs font-mono font-medium text-zinc-800 hover:bg-zinc-100 rounded-none border border-zinc-300 uppercase tracking-wider transition-colors"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={isSubmitting}
-              className="inline-flex items-center gap-2 px-5 py-2 text-xs font-bold text-white bg-amber-600 hover:bg-amber-700 rounded-lg shadow-sm transition-colors disabled:opacity-50"
+              className="inline-flex items-center gap-1.5 px-4 py-1.5 text-xs font-mono font-semibold text-white bg-zinc-900 hover:bg-black rounded-none uppercase tracking-wider transition-colors disabled:opacity-50"
             >
               {isSubmitting ? (
                 <>

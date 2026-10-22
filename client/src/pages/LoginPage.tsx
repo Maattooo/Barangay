@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { Building2, KeyRound, User, AlertCircle, Shield, ChevronDown, ChevronUp, Loader2 } from 'lucide-react';
+import { Building2, KeyRound, User, AlertCircle, Loader2 } from 'lucide-react';
 
 export const LoginPage: React.FC = () => {
   const { login, isAuthenticated } = useAuth();
@@ -12,7 +12,6 @@ export const LoginPage: React.FC = () => {
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [showDemoHelper, setShowDemoHelper] = useState(true);
 
   // If already authenticated, redirect to target or dashboard
   useEffect(() => {
@@ -34,7 +33,6 @@ export const LoginPage: React.FC = () => {
     setIsSubmitting(true);
     try {
       await login(username.trim(), password);
-      // Navigation is handled inside login() or triggered by isAuthenticated effect
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Invalid username or password';
       setError(message);
@@ -43,54 +41,48 @@ export const LoginPage: React.FC = () => {
     }
   };
 
-  const handleAutofill = (u: string, p: string) => {
-    setUsername(u);
-    setPassword(p);
-    setError(null);
-  };
-
-  const demoAccounts = [
-    { label: 'Admin (Secretary)', user: 'admin', pass: 'admin123', badgeColor: 'bg-purple-100 text-purple-800 border-purple-200' },
-    { label: 'Clerk (Staff)', user: 'clerk', pass: 'clerk123', badgeColor: 'bg-blue-100 text-blue-800 border-blue-200' },
-    { label: 'Treasurer', user: 'treasurer', pass: 'treasurer123', badgeColor: 'bg-emerald-100 text-emerald-800 border-emerald-200' },
-    { label: 'Lupon Tagapamayapa', user: 'lupon', pass: 'lupon123', badgeColor: 'bg-amber-100 text-amber-800 border-amber-200' }
-  ];
-
   return (
-    <div className="min-h-screen bg-slate-900 flex flex-col justify-center items-center p-4">
-      <div className="w-full max-w-md bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden">
-        {/* Header Header & Branding */}
-        <div className="bg-slate-800 p-6 text-center text-white border-b border-slate-700">
-          <div className="inline-flex p-3 bg-blue-600 rounded-2xl shadow-lg mb-3">
-            <Building2 className="w-8 h-8 text-white" />
+    <div className="min-h-screen bg-[#09090B] flex flex-col justify-center items-center p-4 selection:bg-white selection:text-black">
+      <div className="w-full max-w-md bg-[#121214] border border-zinc-800 rounded-none shadow-none overflow-hidden">
+        {/* Header & Branding */}
+        <div className="p-6 text-center border-b border-zinc-800 bg-[#0E0E10]">
+          <div className="inline-flex p-3 bg-zinc-800 border border-zinc-700 text-white rounded-none mb-3">
+            <Building2 className="w-6 h-6 text-zinc-100" />
           </div>
-          <h1 className="text-xl font-black tracking-tight text-white">Barangay Management System</h1>
-          <p className="text-xs text-slate-300 mt-1">Registry of Inhabitants &amp; Certificate Issuance</p>
-          <div className="mt-3 inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-            Offline Local LAN Workstation
+          <h1 className="text-base font-black tracking-tight text-white uppercase">
+            Barangay Operations Portal
+          </h1>
+          <p className="text-[11px] font-mono text-zinc-400 mt-0.5 uppercase tracking-wider">
+            Civil Registry &amp; Document Terminal
+          </p>
+          <div className="mt-3 inline-flex items-center gap-2 px-2.5 py-1 text-[10px] font-mono font-medium text-emerald-400 bg-emerald-950/30 border border-emerald-800/60 rounded-none">
+            <span className="w-1.5 h-1.5 rounded-none bg-emerald-400 animate-pulse"></span>
+            <span className="uppercase tracking-widest">Offline Local LAN Mode</span>
           </div>
         </div>
 
         {/* Form Body */}
-        <div className="p-6 sm:p-8 space-y-6">
+        <div className="p-6 sm:p-7 space-y-5">
           {error && (
             <div
               role="alert"
-              className="flex items-start gap-3 p-3.5 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm animate-fade-in"
+              className="flex items-start gap-2.5 p-3 bg-red-950/40 border border-red-800 text-red-200 text-xs font-medium rounded-none"
             >
-              <AlertCircle className="w-5 h-5 flex-shrink-0 text-red-600 mt-0.5" />
-              <div className="flex-1 font-medium">{error}</div>
+              <AlertCircle className="w-4 h-4 flex-shrink-0 text-red-400 mt-0.5" />
+              <div className="flex-1">{error}</div>
             </div>
           )}
 
           <form onSubmit={handleSubmit} className="space-y-4" noValidate={false}>
             <div>
-              <label htmlFor="username" className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">
+              <label
+                htmlFor="username"
+                className="block text-[11px] font-mono font-semibold uppercase tracking-wider text-zinc-300 mb-1.5"
+              >
                 Username
               </label>
               <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-zinc-500">
                   <User className="w-4 h-4" />
                 </div>
                 <input
@@ -101,18 +93,21 @@ export const LoginPage: React.FC = () => {
                   autoFocus
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
-                  placeholder="Enter your workstation username"
-                  className="w-full pl-9 pr-3 py-2.5 bg-white border border-slate-300 rounded-lg text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent transition-all shadow-sm"
+                  placeholder="Enter workstation username"
+                  className="w-full pl-9 pr-3 py-2 bg-zinc-900 border border-zinc-700 rounded-none text-sm text-white placeholder-zinc-500 focus:outline-none focus:border-white focus:ring-1 focus:ring-white transition-colors"
                 />
               </div>
             </div>
 
             <div>
-              <label htmlFor="password" className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">
+              <label
+                htmlFor="password"
+                className="block text-[11px] font-mono font-semibold uppercase tracking-wider text-zinc-300 mb-1.5"
+              >
                 Password
               </label>
               <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-zinc-500">
                   <KeyRound className="w-4 h-4" />
                 </div>
                 <input
@@ -122,8 +117,8 @@ export const LoginPage: React.FC = () => {
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Enter your account password"
-                  className="w-full pl-9 pr-3 py-2.5 bg-white border border-slate-300 rounded-lg text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent transition-all shadow-sm"
+                  placeholder="Enter account password"
+                  className="w-full pl-9 pr-3 py-2 bg-zinc-900 border border-zinc-700 rounded-none text-sm text-white placeholder-zinc-500 focus:outline-none focus:border-white focus:ring-1 focus:ring-white transition-colors"
                 />
               </div>
             </div>
@@ -131,65 +126,23 @@ export const LoginPage: React.FC = () => {
             <button
               type="submit"
               disabled={isSubmitting}
-              className="w-full py-2.5 px-4 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white font-bold rounded-lg shadow transition-colors flex items-center justify-center gap-2 mt-2 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-600 text-sm"
+              className="w-full py-2.5 px-4 bg-white hover:bg-zinc-200 disabled:bg-zinc-800 disabled:text-zinc-500 text-zinc-950 font-bold rounded-none transition-colors flex items-center justify-center gap-2 mt-4 text-xs font-mono uppercase tracking-wider focus:outline-none focus:ring-1 focus:ring-white"
             >
               {isSubmitting ? (
                 <>
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                  <span>Signing In...</span>
+                  <Loader2 className="w-4 h-4 animate-spin text-zinc-950" />
+                  <span>Verifying Credentials...</span>
                 </>
               ) : (
                 <span>Sign In to Workstation</span>
               )}
             </button>
           </form>
-
-          {/* Quick Demo Login Helper */}
-          <div className="pt-2 border-t border-slate-200">
-            <button
-              type="button"
-              onClick={() => setShowDemoHelper(!showDemoHelper)}
-              className="w-full flex items-center justify-between text-xs font-bold text-slate-600 hover:text-slate-900 py-1 transition-colors"
-            >
-              <span className="flex items-center gap-1.5">
-                <Shield className="w-3.5 h-3.5 text-blue-600" />
-                Quick Demo Login Helper
-              </span>
-              {showDemoHelper ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-            </button>
-
-            {showDemoHelper && (
-              <div className="mt-2 p-3 bg-slate-50 border border-slate-200 rounded-lg space-y-2">
-                <p className="text-[11px] text-slate-500 leading-tight">
-                  Click any seeded account below to autofill credentials for testing:
-                </p>
-                <div className="grid grid-cols-2 gap-2">
-                  {demoAccounts.map((acc) => (
-                    <button
-                      key={acc.user}
-                      type="button"
-                      aria-label={`Demo ${acc.label}`}
-                      onClick={() => handleAutofill(acc.user, acc.pass)}
-                      className="p-2 text-left bg-white border border-slate-200 hover:border-blue-400 rounded-md shadow-sm transition-all text-xs group"
-                    >
-                      <div className="font-semibold text-slate-800 flex items-center justify-between">
-                        <span>{acc.user}</span>
-                        <span className={`text-[10px] px-1.5 py-0.2 rounded border font-medium ${acc.badgeColor}`}>
-                          {acc.label.split(' ')[0]}
-                        </span>
-                      </div>
-                      <div className="text-[11px] text-slate-500 font-mono mt-0.5">pass: {acc.pass}</div>
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
         </div>
 
-        {/* Footer info */}
-        <div className="px-6 py-3 bg-slate-100 border-t border-slate-200 text-center text-[11px] text-slate-500">
-          Standalone Embedded Workstation &bull; Host: 0.0.0.0:3000
+        {/* Footer Info */}
+        <div className="px-6 py-2.5 bg-[#0C0C0E] border-t border-zinc-800 text-center text-[10px] font-mono text-zinc-400 uppercase tracking-wider">
+          Standalone Embedded Workstation &bull; Port 3000
         </div>
       </div>
     </div>

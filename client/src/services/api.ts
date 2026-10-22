@@ -432,6 +432,21 @@ class ApiClient {
     });
   }
 
+  public async createTemplate(payload: {
+    template_code: string;
+    template_name: string;
+    title_header: string;
+    body_html: string;
+    show_officials_sidebar?: number;
+    default_fee?: number;
+    requires_blotter_check?: number;
+  }): Promise<CertificateTemplate> {
+    return this.request<CertificateTemplate>('/api/templates', {
+      method: 'POST',
+      body: JSON.stringify(payload)
+    });
+  }
+
   public async updateTemplate(id: number | string, payload: UpdateTemplateInput): Promise<CertificateTemplate> {
     return this.request<CertificateTemplate>(`/api/templates/${id}`, {
       method: 'PUT',

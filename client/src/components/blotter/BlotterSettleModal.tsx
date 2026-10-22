@@ -74,37 +74,37 @@ export const BlotterSettleModal: React.FC<BlotterSettleModalProps> = ({
       role="dialog"
       aria-modal="true"
       aria-labelledby="settle-modal-title"
-      className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4"
+      className="fixed inset-0 z-50 overflow-y-auto bg-black/60 flex items-center justify-center p-4"
     >
-      <div className="bg-white rounded-2xl shadow-2xl max-w-xl w-full border border-slate-200 overflow-hidden my-8 animate-in fade-in duration-150">
-        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 bg-slate-50">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-emerald-100 text-emerald-700 rounded-lg">
-              <Scale className="w-5 h-5" />
+      <div className="bg-white rounded-none shadow-none max-w-xl w-full border border-zinc-300 overflow-hidden my-8">
+        <div className="flex items-center justify-between px-5 py-3.5 border-b border-zinc-200 bg-zinc-50">
+          <div className="flex items-center gap-2.5">
+            <div className="p-1.5 bg-zinc-100 text-zinc-800 rounded-none border border-zinc-200">
+              <Scale className="w-4 h-4" />
             </div>
             <div>
-              <h2 id="settle-modal-title" className="text-base font-bold text-slate-900">
+              <h2 id="settle-modal-title" className="text-sm font-bold text-zinc-950 uppercase tracking-tight">
                 Update / Settle Blotter Case
               </h2>
-              <p className="text-xs text-slate-500">
-                Case No: <span className="font-mono font-bold text-slate-700">{record.case_number}</span>
+              <p className="text-[11px] font-mono text-zinc-500 uppercase">
+                Case No: <span className="font-bold text-zinc-900">{record.case_number}</span>
               </p>
             </div>
           </div>
           <button
             onClick={onClose}
             aria-label="Close modal"
-            className="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100 transition-colors"
+            className="p-1 text-zinc-400 hover:text-zinc-700 rounded-none hover:bg-zinc-200 transition-colors"
           >
-            <X className="w-5 h-5" />
+            <X className="w-4 h-4" />
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-6 space-y-4 max-h-[calc(85vh-120px)] overflow-y-auto">
+        <form onSubmit={handleSubmit} className="p-5 space-y-4 max-h-[calc(85vh-120px)] overflow-y-auto">
           {error && (
             <div
               role="alert"
-              className="p-3 bg-red-50 border border-red-200 rounded-lg text-xs text-red-700 font-medium flex items-start gap-2"
+              className="p-2.5 bg-red-50 border border-red-200 rounded-none text-xs text-red-800 font-medium font-mono flex items-start gap-2"
             >
               <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
               <span>{error}</span>
@@ -112,28 +112,28 @@ export const BlotterSettleModal: React.FC<BlotterSettleModalProps> = ({
           )}
 
           {/* Case summary overview */}
-          <div className="p-3 bg-slate-50 rounded-lg border border-slate-200 grid grid-cols-2 gap-2 text-xs">
+          <div className="p-3 bg-zinc-50 rounded-none border border-zinc-200 grid grid-cols-2 gap-2 text-xs font-mono">
             <div>
-              <span className="text-slate-400 block font-medium">Complainant:</span>
-              <span className="font-semibold text-slate-800">{record.complainant_name}</span>
+              <span className="text-zinc-400 block text-[10px] uppercase">Complainant:</span>
+              <span className="font-semibold text-zinc-900 font-sans">{record.complainant_name}</span>
             </div>
             <div>
-              <span className="text-slate-400 block font-medium">Respondent:</span>
-              <span className="font-semibold text-slate-800">{record.respondent_name}</span>
+              <span className="text-zinc-400 block text-[10px] uppercase">Respondent:</span>
+              <span className="font-semibold text-zinc-900 font-sans">{record.respondent_name}</span>
             </div>
             <div>
-              <span className="text-slate-400 block font-medium">Incident Type:</span>
-              <span className="font-medium text-slate-700">{record.incident_type}</span>
+              <span className="text-zinc-400 block text-[10px] uppercase">Incident Type:</span>
+              <span className="font-medium text-zinc-700 font-sans">{record.incident_type}</span>
             </div>
             <div>
-              <span className="text-slate-400 block font-medium">Current Status:</span>
-              <span className="font-bold text-slate-800">{record.status}</span>
+              <span className="text-zinc-400 block text-[10px] uppercase">Current Status:</span>
+              <span className="font-bold text-zinc-950">{record.status}</span>
             </div>
           </div>
 
           {/* Status transition dropdown */}
-          <div className="space-y-1.5">
-            <label htmlFor="update_status" className="block text-xs font-semibold text-slate-700">
+          <div className="space-y-1">
+            <label htmlFor="update_status" className="block text-xs font-mono font-semibold uppercase text-zinc-700">
               New Case Status <span className="text-red-500">*</span>
             </label>
             <select
@@ -142,7 +142,7 @@ export const BlotterSettleModal: React.FC<BlotterSettleModalProps> = ({
               aria-label="New Case Status"
               value={status}
               onChange={(e) => setStatus(e.target.value as BlotterStatus)}
-              className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg bg-white focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition"
+              className="w-full px-3 py-1.5 text-xs sm:text-sm font-mono border border-zinc-300 rounded-none bg-white text-zinc-900 focus:ring-1 focus:ring-zinc-900 focus:border-zinc-900 outline-none transition-colors"
             >
               <option value="Active">Active (Blocks Issuance)</option>
               <option value="Under Mediation">Under Mediation (Blocks Issuance)</option>
@@ -153,8 +153,8 @@ export const BlotterSettleModal: React.FC<BlotterSettleModalProps> = ({
           </div>
 
           {/* Settlement notes */}
-          <div className="space-y-1.5">
-            <label htmlFor="settlement_notes" className="block text-xs font-semibold text-slate-700">
+          <div className="space-y-1">
+            <label htmlFor="settlement_notes" className="block text-xs font-mono font-semibold uppercase text-zinc-700">
               Settlement / Resolution Notes {(status === 'Settled' || status === 'Dismissed') && <span className="text-red-500">*</span>}
             </label>
             <textarea
@@ -165,13 +165,13 @@ export const BlotterSettleModal: React.FC<BlotterSettleModalProps> = ({
               value={settlementNotes}
               onChange={(e) => setSettlementNotes(e.target.value)}
               placeholder="State Lupon mediation outcome, agreement terms, or dismissal rationale..."
-              className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition"
+              className="w-full px-3 py-1.5 text-xs sm:text-sm border border-zinc-300 rounded-none focus:ring-1 focus:ring-zinc-900 focus:border-zinc-900 outline-none transition-colors"
             />
           </div>
 
           {/* Incident location */}
-          <div className="space-y-1.5">
-            <label htmlFor="edit_incident_location" className="block text-xs font-semibold text-slate-700">
+          <div className="space-y-1">
+            <label htmlFor="edit_incident_location" className="block text-xs font-mono font-semibold uppercase text-zinc-700">
               Incident Location
             </label>
             <input
@@ -180,13 +180,13 @@ export const BlotterSettleModal: React.FC<BlotterSettleModalProps> = ({
               type="text"
               value={incidentLocation}
               onChange={(e) => setIncidentLocation(e.target.value)}
-              className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition"
+              className="w-full px-3 py-1.5 text-xs sm:text-sm border border-zinc-300 rounded-none focus:ring-1 focus:ring-zinc-900 focus:border-zinc-900 outline-none transition-colors"
             />
           </div>
 
           {/* Incident details */}
-          <div className="space-y-1.5">
-            <label htmlFor="edit_incident_details" className="block text-xs font-semibold text-slate-700">
+          <div className="space-y-1">
+            <label htmlFor="edit_incident_details" className="block text-xs font-mono font-semibold uppercase text-zinc-700">
               Incident Details
             </label>
             <textarea
@@ -195,23 +195,23 @@ export const BlotterSettleModal: React.FC<BlotterSettleModalProps> = ({
               rows={3}
               value={incidentDetails}
               onChange={(e) => setIncidentDetails(e.target.value)}
-              className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition"
+              className="w-full px-3 py-1.5 text-xs sm:text-sm border border-zinc-300 rounded-none focus:ring-1 focus:ring-zinc-900 focus:border-zinc-900 outline-none transition-colors"
             />
           </div>
 
-          <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-200">
+          <div className="flex items-center justify-end gap-2 pt-3 border-t border-zinc-200">
             <button
               type="button"
               onClick={onClose}
               disabled={isSubmitting}
-              className="px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-100 rounded-lg border border-slate-300 transition-colors"
+              className="px-3.5 py-1.5 text-xs font-mono font-medium text-zinc-800 hover:bg-zinc-100 rounded-none border border-zinc-300 uppercase tracking-wider transition-colors"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={isSubmitting}
-              className="inline-flex items-center gap-2 px-5 py-2 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg shadow-sm transition-colors disabled:opacity-50"
+              className="inline-flex items-center gap-1.5 px-4 py-1.5 text-xs font-mono font-semibold text-white bg-emerald-700 hover:bg-emerald-800 rounded-none uppercase tracking-wider transition-colors disabled:opacity-50"
             >
               {isSubmitting ? (
                 <>

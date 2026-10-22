@@ -210,4 +210,98 @@ router.put('/:id', requireRole('Admin'), (req: Request, res: Response): void => 
   }
 });
 
+/**
+ * POST /api/templates
+ * Creates a new certificate template. Restricted strictly to Admin.
+ */
+router.post('/', requireRole('Admin'), (req: Request, res: Response): void => {
+  const {
+    template_code,
+    template_name,
+    title_header,
+    body_html,
+    show_officials_sidebar = 1,
+    default_fee = 50.0,
+    requires_blotter_check = 0,
+    is_active = 1
+  } = req.body || {};
+
+  if (!template_code || typeof template_code !== 'string') {
+    res.status(400).json({ error: 'template_code is required and must be a string' });
+    return;
+  }
+  if (!template_name || typeof template_name !== 'string') {
+    res.status(400).json({ error: 'template_name is required and must be a string' });
+    return;
+  }
+  if (!title_header || typeof title_header !== 'string') {
+    res.status(400).json({ error: 'title_header is required and must be a string' });
+    return;
+  }
+  if (!body_html || typeof body_html !== 'string') {
+    res.status(400).json({ error: 'body_html is required and must be a string' });
+    return;
+  }
+
+  const cleanCode = template_code.trim().toUpperCase();
+  const existing = db.prepare('SELECT id FROM certificate_templates WHERE template_code = ?').get(cleanCode);
+  if (existing) {
+    res.status(409).json({ error: 'A template with this template_code already exists' });
+    return;
+  }
+
+  try {
+    let createdTemplate: CertificateTemplate;
+
+    const createTemplateTx = db.transaction(() => {
+      const result = db.prepare(`
+        INSERT INTO certificate_templates (
+          template_code, template_name, title_header, body_html,
+          show_officials_sidebar, default_fee, requires_blotter_check,
+          is_active, updated_by, updated_at
+        ) VALUES (
+          @template_code, @template_name, @title_header, @body_html,
+          @show_officials_sidebar, @default_fee, @requires_blotter_check,
+          @is_active, @updated_by, datetime('now', 'localtime')
+        )
+      `).run({
+        template_code: cleanCode,
+        template_name: template_name.trim(),
+        title_header: title_header.trim().toUpperCase(),
+        body_html: body_html.trim(),
+        show_officials_sidebar: Number(show_officials_sidebar) ? 1 : 0,
+        default_fee: Math.max(0, Number(default_fee) || 0),
+        requires_blotter_check: Number(requires_blotter_check) ? 1 : 0,
+        is_active: Number(is_active) ? 1 : 0,
+        updated_by: req.user!.id
+      });
+
+      createdTemplate = db.prepare(`
+        SELECT id, template_code, template_name, title_header, body_html,
+               show_officials_sidebar, default_fee, requires_blotter_check,
+               is_active, updated_by, updated_at
+        FROM certificate_templates
+        WHERE id = ?
+      `).get(result.lastInsertRowid) as CertificateTemplate;
+
+      logAuditEvent({
+        userId: req.user!.id,
+        username: req.user!.username,
+        userRole: req.user!.role,
+        action: 'CREATE',
+        entityType: 'template',
+        entityId: createdTemplate.id,
+        summaryText: `Created template: ${createdTemplate.template_name} (${createdTemplate.template_code})`,
+        newData: createdTemplate,
+        clientIp: req.clientIp
+      });
+    });
+
+    createTemplateTx();
+    res.status(201).json(createdTemplate!);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to create template', details: (error as Error).message });
+  }
+});
+
 export default router;

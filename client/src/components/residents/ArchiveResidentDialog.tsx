@@ -41,63 +41,62 @@ export const ArchiveResidentDialog: React.FC<ArchiveResidentDialogProps> = ({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs"
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60"
       data-testid="archive-resident-dialog"
     >
-      <div className="relative w-full max-w-md bg-white rounded-xl shadow-xl border border-slate-200 overflow-hidden">
+      <div className="relative w-full max-w-md bg-white rounded-none shadow-none border border-zinc-300 overflow-hidden">
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 bg-red-50/50">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-red-100 text-red-600 rounded-lg">
-              <AlertTriangle className="w-5 h-5" />
+        <div className="flex items-center justify-between px-5 py-3.5 border-b border-zinc-200 bg-red-50/60">
+          <div className="flex items-center gap-2.5">
+            <div className="p-1.5 bg-red-100 text-red-700 rounded-none border border-red-200">
+              <AlertTriangle className="w-4 h-4" />
             </div>
             <div>
-              <h3 className="text-base font-bold text-slate-900">Archive Resident Profile</h3>
-              <p className="text-xs text-slate-500">Soft-delete confirmation</p>
+              <h3 className="text-sm font-bold text-zinc-950 uppercase tracking-tight">Archive Resident Profile</h3>
+              <p className="text-[11px] font-mono text-zinc-500 uppercase">Soft-delete confirmation</p>
             </div>
           </div>
           <button
             type="button"
             onClick={onClose}
             disabled={loading}
-            className="p-1 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-200 transition-colors"
+            className="p-1 text-zinc-400 hover:text-zinc-700 rounded-none hover:bg-zinc-200 transition-colors"
           >
-            <X className="w-5 h-5" />
+            <X className="w-4 h-4" />
           </button>
         </div>
 
         {/* Content */}
-        <div className="p-6 space-y-4">
+        <div className="p-5 space-y-3.5">
           {error && (
-            <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-xs text-red-700">
+            <div className="p-2.5 bg-red-50 border border-red-200 rounded-none text-xs text-red-800 font-medium">
               {error}
             </div>
           )}
 
-          <div className="text-sm text-slate-600">
+          <div className="text-xs sm:text-sm text-zinc-700">
             Are you sure you want to archive{' '}
-            <strong className="text-slate-900 font-semibold">{residentFullName}</strong> from{' '}
-            <strong className="text-slate-900 font-semibold">{resident.purok}</strong>?
+            <strong className="text-zinc-950 font-semibold">{residentFullName}</strong> from{' '}
+            <strong className="text-zinc-950 font-semibold">{resident.purok}</strong>?
           </div>
 
-          <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg text-xs text-amber-800 space-y-1">
-            <div className="font-semibold flex items-center gap-1.5">
-              <span>Notice on Archival:</span>
+          <div className="p-3 bg-zinc-50 border border-zinc-200 rounded-none text-xs font-mono text-zinc-700 space-y-1">
+            <div className="font-semibold text-zinc-900 uppercase tracking-wider">
+              Notice on Archival:
             </div>
-            <p>
-              Archiving sets the resident record to inactive (<code className="font-mono bg-amber-100 px-1 rounded">is_archived = 1</code>).
-              Historical certificates, blotter logs, and audit entries referencing this resident will remain intact.
+            <p className="text-[11px] leading-relaxed">
+              Archiving sets the record to inactive (<code>is_archived = 1</code>). Historical certificates, blotter logs, and audit entries referencing this resident will remain intact.
             </p>
           </div>
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-slate-200 bg-slate-50">
+        <div className="flex items-center justify-end gap-2 px-5 py-3 border-t border-zinc-200 bg-zinc-50">
           <button
             type="button"
             onClick={onClose}
             disabled={loading}
-            className="px-4 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors"
+            className="px-3.5 py-1.5 text-xs font-mono font-medium text-zinc-800 bg-white border border-zinc-300 rounded-none hover:bg-zinc-100 uppercase tracking-wider transition-colors"
           >
             Cancel
           </button>
@@ -106,16 +105,16 @@ export const ArchiveResidentDialog: React.FC<ArchiveResidentDialogProps> = ({
             onClick={handleConfirmArchive}
             disabled={loading}
             data-testid="confirm-archive-btn"
-            className="px-4 py-2 text-sm font-semibold text-white bg-red-600 rounded-lg hover:bg-red-700 disabled:opacity-50 transition-colors flex items-center gap-1.5"
+            className="px-3.5 py-1.5 text-xs font-mono font-semibold text-white bg-red-600 hover:bg-red-700 disabled:opacity-50 rounded-none uppercase tracking-wider transition-colors flex items-center gap-1.5"
           >
             {loading ? (
               <>
-                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-none animate-spin" />
                 <span>Archiving...</span>
               </>
             ) : (
               <>
-                <Archive className="w-4 h-4" />
+                <Archive className="w-3.5 h-3.5" />
                 <span>Confirm Archive</span>
               </>
             )}

@@ -114,25 +114,29 @@ export const CertificatesPage: React.FC = () => {
   };
 
   return (
-    <div className="space-y-6 max-w-7xl mx-auto">
-      {/* Header Banner */}
-      <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+    <div className="space-y-4">
+      {/* Header Card */}
+      <div className="bg-white p-4 sm:p-5 rounded-none border border-zinc-200 shadow-none flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-center gap-3">
-          <div className="p-3 bg-emerald-100 text-emerald-700 rounded-xl">
-            <FileText className="w-6 h-6" />
+          <div className="p-2.5 bg-zinc-100 text-zinc-800 rounded-none border border-zinc-200">
+            <FileText className="w-5 h-5" />
           </div>
           <div>
-            <h1 className="text-xl font-bold text-slate-900 tracking-tight">Certificate Issuance History</h1>
-            <p className="text-xs text-slate-500">Official log of Barangay Clearances, Indigency, and Residency certifications</p>
+            <h1 className="text-base sm:text-lg font-black text-zinc-950 uppercase tracking-tight">
+              Certificate Issuance History
+            </h1>
+            <p className="text-xs text-zinc-500 font-mono mt-0.5">
+              Official log of Barangay Clearances, Indigency, and Residency certifications
+            </p>
           </div>
         </div>
 
         <Link
           to="/certificates/new"
           data-testid="issue-new-certificate-btn"
-          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition-all shadow-sm hover:shadow"
+          className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-none bg-zinc-900 hover:bg-black text-white text-xs font-mono font-semibold uppercase tracking-wider transition-colors shadow-none"
         >
-          <Plus className="w-4 h-4" />
+          <Plus className="w-3.5 h-3.5" />
           <span>Issue New Certificate</span>
         </Link>
       </div>
@@ -142,17 +146,17 @@ export const CertificatesPage: React.FC = () => {
         <div
           role="status"
           data-testid="issuance-success-banner"
-          className="p-4 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-xl flex items-center justify-between gap-3 shadow-sm transition-all"
+          className="p-3 bg-emerald-50 border-l-4 border-l-emerald-600 border border-emerald-200 text-emerald-900 rounded-none flex items-center justify-between gap-3 shadow-none transition-all"
         >
-          <div className="flex items-center gap-3">
-            <CheckCircle className="w-5 h-5 text-emerald-600 flex-shrink-0" />
-            <span className="text-xs sm:text-sm font-medium">{successMessage}</span>
+          <div className="flex items-center gap-2.5">
+            <CheckCircle className="w-4 h-4 text-emerald-600 flex-shrink-0" />
+            <span className="text-xs font-mono font-medium">{successMessage}</span>
           </div>
           <button
             type="button"
             onClick={() => setSuccessMessage(null)}
             data-testid="dismiss-success-banner"
-            className="p-1 text-emerald-600 hover:text-emerald-900 hover:bg-emerald-100 rounded-lg transition-colors"
+            className="p-1 text-emerald-700 hover:text-emerald-950 hover:bg-emerald-100 rounded-none transition-colors"
             aria-label="Dismiss success banner"
           >
             <X className="w-4 h-4" />
@@ -165,17 +169,17 @@ export const CertificatesPage: React.FC = () => {
         <div
           role="alert"
           data-testid="reprint-error-banner"
-          className="p-4 bg-red-50 border border-red-200 text-red-800 rounded-xl flex items-center justify-between gap-3 shadow-sm transition-all"
+          className="p-3 bg-red-50 border-l-4 border-l-red-600 border border-red-200 text-red-900 rounded-none flex items-center justify-between gap-3 shadow-none transition-all"
         >
-          <div className="flex items-center gap-3">
-            <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0" />
-            <span className="text-xs sm:text-sm font-medium">{reprintError}</span>
+          <div className="flex items-center gap-2.5">
+            <AlertCircle className="w-4 h-4 text-red-600 flex-shrink-0" />
+            <span className="text-xs font-mono font-medium">{reprintError}</span>
           </div>
           <button
             type="button"
             onClick={() => setReprintError(null)}
             data-testid="dismiss-reprint-error-banner"
-            className="p-1 text-red-600 hover:text-red-900 hover:bg-red-100 rounded-lg transition-colors"
+            className="p-1 text-red-700 hover:text-red-950 hover:bg-red-100 rounded-none transition-colors"
             aria-label="Dismiss reprint error"
           >
             <X className="w-4 h-4" />
@@ -184,11 +188,11 @@ export const CertificatesPage: React.FC = () => {
       )}
 
       {/* Filter Controls Bar */}
-      <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm space-y-3">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+      <div className="bg-white p-3.5 rounded-none border border-zinc-200 shadow-none space-y-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2.5">
           {/* Search input */}
           <div className="relative lg:col-span-2">
-            <Search className="absolute left-3 top-2.5 w-4 h-4 text-slate-400" />
+            <Search className="absolute left-3 top-2.5 w-3.5 h-3.5 text-zinc-400" />
             <input
               type="text"
               id="search-issuances-input"
@@ -199,7 +203,7 @@ export const CertificatesPage: React.FC = () => {
                 setPage(1);
               }}
               placeholder="Search by resident name or control number..."
-              className="w-full pl-9 pr-3 py-2 text-xs rounded-lg border border-slate-300 bg-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+              className="w-full pl-9 pr-3 py-1.5 text-xs rounded-none border border-zinc-300 bg-white placeholder:text-zinc-400 focus:outline-none focus:ring-1 focus:ring-zinc-900 focus:border-zinc-900 transition-colors"
             />
           </div>
 
@@ -213,7 +217,7 @@ export const CertificatesPage: React.FC = () => {
                 setTemplateFilter(e.target.value);
                 setPage(1);
               }}
-              className="w-full p-2 text-xs rounded-lg border border-slate-300 bg-white text-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+              className="w-full px-2.5 py-1.5 text-xs rounded-none border border-zinc-300 bg-white text-zinc-800 font-mono focus:outline-none focus:ring-1 focus:ring-zinc-900 focus:border-zinc-900 transition-colors"
             >
               <option value="">All Certificate Types</option>
               {templates.map((tpl) => (
@@ -235,7 +239,7 @@ export const CertificatesPage: React.FC = () => {
                 setStartDate(e.target.value);
                 setPage(1);
               }}
-              className="w-full p-2 text-xs rounded-lg border border-slate-300 bg-white text-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+              className="w-full px-2.5 py-1.5 text-xs font-mono rounded-none border border-zinc-300 bg-white text-zinc-800 focus:outline-none focus:ring-1 focus:ring-zinc-900 focus:border-zinc-900 transition-colors"
             />
           </div>
 
@@ -250,21 +254,21 @@ export const CertificatesPage: React.FC = () => {
                 setEndDate(e.target.value);
                 setPage(1);
               }}
-              className="w-full p-2 text-xs rounded-lg border border-slate-300 bg-white text-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+              className="w-full px-2.5 py-1.5 text-xs font-mono rounded-none border border-zinc-300 bg-white text-zinc-800 focus:outline-none focus:ring-1 focus:ring-zinc-900 focus:border-zinc-900 transition-colors"
             />
           </div>
         </div>
 
         {/* Filter Summary & Reset */}
-        <div className="flex items-center justify-between text-xs text-slate-500 pt-1">
+        <div className="flex items-center justify-between text-xs text-zinc-500 font-mono pt-1 border-t border-zinc-100">
           <div>
-            Showing <strong className="text-slate-800">{issuances.length}</strong> of <strong className="text-slate-800">{totalCount}</strong> issued records
+            Showing <strong className="text-zinc-900">{issuances.length}</strong> of <strong className="text-zinc-900">{totalCount}</strong> issued records
           </div>
           {(searchTerm || templateFilter || startDate || endDate) && (
             <button
               type="button"
               onClick={handleResetFilters}
-              className="text-emerald-600 hover:text-emerald-700 font-semibold"
+              className="text-zinc-800 hover:text-black font-semibold underline uppercase text-[11px] tracking-wider"
             >
               Clear all filters
             </button>
@@ -274,35 +278,35 @@ export const CertificatesPage: React.FC = () => {
 
       {/* Error state */}
       {error && (
-        <div className="p-4 bg-red-50 border border-red-200 text-red-700 text-xs rounded-xl flex items-center gap-2">
+        <div className="p-3 bg-red-50 border border-red-200 text-red-800 text-xs font-mono rounded-none flex items-center gap-2">
           <AlertTriangle className="w-4 h-4 flex-shrink-0" />
           <span>{error}</span>
         </div>
       )}
 
       {/* Data Table */}
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+      <div className="bg-white rounded-none border border-zinc-200 shadow-none overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs" data-testid="issuances-history-table">
-            <thead className="bg-slate-50 text-slate-700 font-semibold border-b border-slate-200 uppercase tracking-wider text-[11px]">
+            <thead className="bg-zinc-50 text-zinc-700 font-mono font-semibold border-b border-zinc-200 uppercase tracking-wider text-[11px]">
               <tr>
-                <th className="px-4 py-3.5">Control Number</th>
-                <th className="px-4 py-3.5">Resident Name</th>
-                <th className="px-4 py-3.5">Certificate Type</th>
-                <th className="px-4 py-3.5">Purpose</th>
-                <th className="px-4 py-3.5">Fee / OR Number</th>
-                <th className="px-4 py-3.5">Signatory Snapshot</th>
-                <th className="px-4 py-3.5">Date Issued</th>
-                <th className="px-4 py-3.5">Issuing Clerk</th>
-                <th className="px-4 py-3.5 text-right">Actions</th>
+                <th className="px-4 py-3">Control Number</th>
+                <th className="px-4 py-3">Resident Name</th>
+                <th className="px-4 py-3">Certificate Type</th>
+                <th className="px-4 py-3">Purpose</th>
+                <th className="px-4 py-3">Fee / OR Number</th>
+                <th className="px-4 py-3">Signatory Snapshot</th>
+                <th className="px-4 py-3">Date Issued</th>
+                <th className="px-4 py-3">Issuing Clerk</th>
+                <th className="px-4 py-3 text-right">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100 text-slate-800">
+            <tbody className="divide-y divide-zinc-200 text-zinc-900 font-sans">
               {isLoading && (
                 <tr>
-                  <td colSpan={9} className="p-8 text-center text-slate-500">
+                  <td colSpan={9} className="p-8 text-center text-zinc-500 font-mono">
                     <div className="flex items-center justify-center gap-2">
-                      <Loader2 className="w-5 h-5 text-emerald-600 animate-spin" />
+                      <Loader2 className="w-4 h-4 text-zinc-700 animate-spin" />
                       <span>Loading issuance history...</span>
                     </div>
                   </td>
@@ -311,18 +315,18 @@ export const CertificatesPage: React.FC = () => {
 
               {!isLoading && issuances.length === 0 && (
                 <tr>
-                  <td colSpan={9} className="p-12 text-center text-slate-500">
-                    <FileText className="w-8 h-8 text-slate-300 mx-auto mb-2" />
-                    <p className="font-semibold text-slate-700">No certificate issuances found</p>
-                    <p className="text-[11px] text-slate-400 mt-1">Adjust search filters or issue a new certificate.</p>
+                  <td colSpan={9} className="p-12 text-center text-zinc-500 font-mono">
+                    <FileText className="w-8 h-8 text-zinc-300 mx-auto mb-2" />
+                    <p className="font-semibold text-zinc-800">No certificate issuances found</p>
+                    <p className="text-[11px] text-zinc-400 mt-1">Adjust search filters or issue a new certificate.</p>
                   </td>
                 </tr>
               )}
 
               {!isLoading && issuances.map((item) => (
-                <tr key={item.id} data-testid={`issuance-row-${item.id}`} className="hover:bg-slate-50/75 transition-colors">
+                <tr key={item.id} data-testid={`issuance-row-${item.id}`} className="hover:bg-zinc-50 transition-colors">
                   {/* Control Number & Blotter Override Warning Badge */}
-                  <td className="px-4 py-3 font-mono font-bold text-slate-900 whitespace-nowrap">
+                  <td className="px-4 py-3 font-mono font-bold text-zinc-950 whitespace-nowrap">
                     <div>
                       <span>{item.control_number}</span>
                       {item.had_active_blotter === 1 && (
@@ -330,7 +334,7 @@ export const CertificatesPage: React.FC = () => {
                           <span
                             data-testid={`blotter-override-badge-${item.id}`}
                             title={item.blotter_override_reason ? `Override Reason: ${item.blotter_override_reason}` : 'Blotter Override Authorized'}
-                            className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-red-100 text-red-800 border border-red-200 cursor-help"
+                            className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-none text-[10px] font-mono font-bold uppercase bg-red-50 text-red-800 border border-red-300 cursor-help"
                           >
                             <AlertTriangle className="w-3 h-3 text-red-600 flex-shrink-0" />
                             <span>Blotter Override</span>
@@ -341,45 +345,45 @@ export const CertificatesPage: React.FC = () => {
                   </td>
 
                   {/* Resident Name */}
-                  <td className="px-4 py-3 font-semibold text-slate-900 whitespace-nowrap">
+                  <td className="px-4 py-3 font-medium text-zinc-900 whitespace-nowrap">
                     {item.resident_name || `Resident #${item.resident_id}`}
                   </td>
 
                   {/* Template Name */}
-                  <td className="px-4 py-3 text-slate-700 whitespace-nowrap">
+                  <td className="px-4 py-3 text-zinc-700 whitespace-nowrap">
                     {item.template_name || `Template #${item.template_id}`}
                   </td>
 
                   {/* Purpose */}
-                  <td className="px-4 py-3 text-slate-600 max-w-xs truncate" title={item.purpose}>
+                  <td className="px-4 py-3 text-zinc-600 max-w-xs truncate" title={item.purpose}>
                     {item.purpose}
                   </td>
 
                   {/* Amount Paid / OR Number */}
-                  <td className="px-4 py-3 whitespace-nowrap">
-                    <span className="font-semibold text-slate-800">
+                  <td className="px-4 py-3 whitespace-nowrap font-mono">
+                    <span className="font-bold text-zinc-900">
                       {item.amount_paid > 0 ? `₱${item.amount_paid.toFixed(2)}` : 'FREE'}
                     </span>
-                    <span className="text-slate-400 text-[11px] block">
+                    <span className="text-zinc-500 text-[10px] block">
                       {item.or_number || 'FREE / EXEMPT'}
                     </span>
                   </td>
 
                   {/* Signatory Snapshot */}
                   <td className="px-4 py-3 whitespace-nowrap">
-                    <p className="font-bold text-slate-900 text-[11px] uppercase">{item.signatory_name_snapshot}</p>
-                    <p className="text-[10px] text-slate-500">
+                    <p className="font-bold text-zinc-900 text-[11px] uppercase">{item.signatory_name_snapshot}</p>
+                    <p className="text-[10px] text-zinc-500 font-mono">
                       {item.is_oic_signing ? 'Sangguniang Barangay Member (OIC)' : item.signatory_position_snapshot}
                     </p>
                   </td>
 
                   {/* Date Issued */}
-                  <td className="px-4 py-3 text-slate-600 whitespace-nowrap text-[11px]">
+                  <td className="px-4 py-3 text-zinc-600 whitespace-nowrap text-[11px] font-mono">
                     {item.issued_at}
                   </td>
 
                   {/* Issuing Clerk */}
-                  <td className="px-4 py-3 text-slate-700 whitespace-nowrap text-[11px] font-medium">
+                  <td className="px-4 py-3 text-zinc-700 whitespace-nowrap text-[11px] font-mono">
                     {item.issued_by_name || `User #${item.issued_by_user_id}`}
                   </td>
 
@@ -390,12 +394,12 @@ export const CertificatesPage: React.FC = () => {
                       onClick={() => handleOpenReprint(item)}
                       disabled={reprintingId === item.id}
                       data-testid={`reprint-btn-${item.id}`}
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-300 hover:bg-slate-100 text-slate-700 text-xs font-semibold transition-colors disabled:opacity-50"
+                      className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-none border border-zinc-300 hover:bg-zinc-100 text-zinc-800 text-xs font-mono font-medium uppercase tracking-wider transition-colors disabled:opacity-50"
                     >
                       {reprintingId === item.id ? (
-                        <Loader2 className="w-3.5 h-3.5 text-slate-500 animate-spin" />
+                        <Loader2 className="w-3.5 h-3.5 text-zinc-500 animate-spin" />
                       ) : (
-                        <Printer className="w-3.5 h-3.5 text-slate-500" />
+                        <Printer className="w-3.5 h-3.5 text-zinc-600" />
                       )}
                       <span>Reprint / View</span>
                     </button>
@@ -408,16 +412,16 @@ export const CertificatesPage: React.FC = () => {
 
         {/* Pagination Bar */}
         {totalPages > 1 && (
-          <div className="flex items-center justify-between px-4 py-3 border-t border-slate-200 bg-slate-50 text-xs text-slate-600">
+          <div className="flex items-center justify-between px-4 py-3 border-t border-zinc-200 bg-zinc-50 text-xs font-mono text-zinc-600">
             <div>
-              Page <strong className="text-slate-800">{page}</strong> of <strong className="text-slate-800">{totalPages}</strong>
+              Page <strong className="text-zinc-900">{page}</strong> of <strong className="text-zinc-900">{totalPages}</strong>
             </div>
             <div className="flex items-center gap-2">
               <button
                 type="button"
                 onClick={() => setPage(p => Math.max(1, p - 1))}
                 disabled={page <= 1}
-                className="px-3 py-1 rounded border border-slate-300 bg-white hover:bg-slate-50 disabled:opacity-50"
+                className="px-3 py-1 rounded-none border border-zinc-300 bg-white hover:bg-zinc-100 uppercase tracking-wider text-[11px] font-mono disabled:opacity-50"
               >
                 Previous
               </button>
@@ -425,7 +429,7 @@ export const CertificatesPage: React.FC = () => {
                 type="button"
                 onClick={() => setPage(p => Math.min(totalPages, p + 1))}
                 disabled={page >= totalPages}
-                className="px-3 py-1 rounded border border-slate-300 bg-white hover:bg-slate-50 disabled:opacity-50"
+                className="px-3 py-1 rounded-none border border-zinc-300 bg-white hover:bg-zinc-100 uppercase tracking-wider text-[11px] font-mono disabled:opacity-50"
               >
                 Next
               </button>

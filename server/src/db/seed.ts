@@ -656,7 +656,9 @@ export function seed(targetDb: Database.Database = db): void {
       { key: 'municipality_name', value: 'Antipolo City' },
       { key: 'province_name', value: 'Rizal' },
       { key: 'region_name', value: 'Region IV-A (CALABARZON)' },
-      { key: 'contact_email', value: 'sanjose.antipolo@example.gov.ph' }
+      { key: 'contact_email', value: 'sanjose.antipolo@example.gov.ph' },
+      { key: 'puroks_json', value: JSON.stringify(['Purok 1', 'Purok 2', 'Purok 3', 'Purok 4', 'Sitio Centro', 'Sitio Riverside']) },
+      { key: 'streets_json', value: JSON.stringify(['Rizal St.', 'Bonifacio St.', 'Mabini St.', 'Dahlia St.', 'Riverside Ave.', 'Sampaguita St.']) }
     ];
 
     const upsertSetting = targetDb.prepare(`

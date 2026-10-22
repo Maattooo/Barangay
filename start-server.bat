@@ -1,5 +1,4 @@
 @echo off
-setlocal enabledelayedexpansion
 title Barangay Management System Host Server
 
 echo   Barangay Management System - Startup Launcher
@@ -26,17 +25,22 @@ start "" cmd /c "timeout /t 2 /nobreak >nul && start http://localhost:3000"
 cd /d "%~dp0"
 set NODE_ENV=production
 
-if exist "server\dist\index.js" if exist "client\dist\index.html" (
-    echo Starting production server...
-    node server\dist\index.js
-) else (
-    echo [INFO] Complete production build not found (requires both server\dist\index.js and client\dist\index.html).
-    echo Starting development server...
-    call npm run dev
-)
+if not exist "server\dist\index.js" goto run_dev
+if not exist "client\dist\index.html" goto run_dev
 
+echo Starting production server...
+node server\dist\index.js
+goto finish
+
+:run_dev
+echo [INFO] Complete production build not found.
+echo Starting development server...
+call npm run dev
+
+:finish
 if %ERRORLEVEL% neq 0 (
     echo.
     echo [ERROR] Server terminated with an error code.
     pause
 )
+

@@ -67,12 +67,45 @@ export const ResidentFormModal: React.FC<ResidentFormModalProps> = ({
   const [isOsy, setIsOsy] = useState(false);
   const [seniorIdNo, setSeniorIdNo] = useState('');
 
+  // Tab state
+  const [activeTab, setActiveTab] = useState<'demographics' | 'address' | 'sectors'>('demographics');
+  const [purokOptions, setPurokOptions] = useState<string[]>(DEFAULT_PUROKS);
+  const [streetOptions, setStreetOptions] = useState<string[]>([]);
+
   // UI / Error state
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [submitting, setSubmitting] = useState(false);
   const [generalError, setGeneralError] = useState<string | null>(null);
 
+  // Fetch dynamic territory settings when modal opens
   useEffect(() => {
+    if (!isOpen) return;
+    api.getSystemInfo()
+      .then((info) => {
+        const puroksRaw = typeof info?.settings?.puroks_json === 'string' ? info.settings.puroks_json : '';
+        if (puroksRaw) {
+          try {
+            const parsed = JSON.parse(puroksRaw);
+            if (Array.isArray(parsed) && parsed.length > 0) {
+              setPurokOptions(parsed);
+            }
+          } catch {}
+        }
+        const streetsRaw = typeof info?.settings?.streets_json === 'string' ? info.settings.streets_json : '';
+        if (streetsRaw) {
+          try {
+            const parsed = JSON.parse(streetsRaw);
+            if (Array.isArray(parsed) && parsed.length > 0) {
+              setStreetOptions(parsed);
+            }
+          } catch {}
+        }
+      })
+      .catch(() => {});
+  }, [isOpen]);
+
+  useEffect(() => {
+    setActiveTab('demographics');
     if (resident) {
       setFirstName(resident.first_name || '');
       setMiddleName(resident.middle_name || '');
@@ -163,6 +196,11 @@ export const ResidentFormModal: React.FC<ResidentFormModalProps> = ({
 
     setErrors(newErrors);
     if (Object.keys(newErrors).length > 0) {
+      if (newErrors.first_name || newErrors.last_name || newErrors.birthdate || newErrors.sex || newErrors.civil_status) {
+        setActiveTab('demographics');
+      } else if (newErrors.purok) {
+        setActiveTab('address');
+      }
       setGeneralError('Please correct the validation errors below before submitting.');
       return false;
     }
@@ -170,6 +208,11 @@ export const ResidentFormModal: React.FC<ResidentFormModalProps> = ({
     setGeneralError(null);
     return true;
   };
+
+  const hasDemographicsError = Boolean(
+    errors.first_name || errors.last_name || errors.birthdate || errors.sex || errors.civil_status
+  );
+  const hasAddressError = Boolean(errors.purok);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -228,21 +271,21 @@ export const ResidentFormModal: React.FC<ResidentFormModalProps> = ({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs overflow-y-auto"
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 overflow-y-auto"
       data-testid="resident-form-modal"
     >
-      <div className="relative w-full max-w-3xl bg-white rounded-xl shadow-xl border border-slate-200 overflow-hidden my-8">
+      <div className="relative w-full max-w-3xl bg-white rounded-none shadow-none border border-zinc-300 overflow-hidden my-8">
         {/* Modal Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 bg-slate-50">
+        <div className="flex items-center justify-between px-5 py-3.5 border-b border-zinc-200 bg-zinc-50">
           <div className="flex items-center gap-2.5">
-            <div className="p-2 bg-blue-100 text-blue-700 rounded-lg">
-              {isEdit ? <Save className="w-5 h-5" /> : <UserPlus className="w-5 h-5" />}
+            <div className="p-1.5 bg-zinc-100 text-zinc-800 rounded-none border border-zinc-200">
+              {isEdit ? <Save className="w-4 h-4" /> : <UserPlus className="w-4 h-4" />}
             </div>
             <div>
-              <h2 className="text-lg font-bold text-slate-900">
+              <h2 className="text-sm font-black text-zinc-950 uppercase tracking-tight">
                 {isEdit ? 'Edit Resident Profile' : 'Add New Inhabitant (RBI)'}
               </h2>
-              <p className="text-xs text-slate-500">
+              <p className="text-[11px] font-mono text-zinc-500 uppercase">
                 {isEdit
                   ? 'Update demographic details and sector identifiers'
                   : 'Register a new resident in the Registry of Barangay Inhabitants'}
@@ -253,9 +296,69 @@ export const ResidentFormModal: React.FC<ResidentFormModalProps> = ({
             type="button"
             onClick={onClose}
             data-testid="close-modal-btn"
-            className="p-1 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-200 transition-colors"
+            className="p-1 text-zinc-400 hover:text-zinc-700 rounded-none hover:bg-zinc-200 transition-colors"
           >
-            <X className="w-5 h-5" />
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+
+        {/* Tab Navigation Strip */}
+        <div className="flex border-b border-zinc-200 bg-zinc-50 select-none font-mono text-xs">
+          <button
+            type="button"
+            onClick={() => setActiveTab('demographics')}
+            className={`flex-1 py-2.5 px-3 flex items-center justify-center gap-2 border-b-2 font-bold uppercase tracking-wider transition-colors ${
+              activeTab === 'demographics'
+                ? 'border-zinc-950 bg-white text-zinc-950'
+                : 'border-transparent text-zinc-500 hover:text-zinc-800 hover:bg-zinc-100'
+            }`}
+          >
+            <span
+              className={`w-4 h-4 flex items-center justify-center text-[10px] rounded-none ${
+                activeTab === 'demographics' ? 'bg-zinc-900 text-white' : 'bg-zinc-200 text-zinc-700'
+              }`}
+            >
+              1
+            </span>
+            <span>Demographics</span>
+            {hasDemographicsError && <span className="w-1.5 h-1.5 bg-red-600 inline-block ml-1" />}
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab('address')}
+            className={`flex-1 py-2.5 px-3 flex items-center justify-center gap-2 border-b-2 font-bold uppercase tracking-wider transition-colors ${
+              activeTab === 'address'
+                ? 'border-zinc-950 bg-white text-zinc-950'
+                : 'border-transparent text-zinc-500 hover:text-zinc-800 hover:bg-zinc-100'
+            }`}
+          >
+            <span
+              className={`w-4 h-4 flex items-center justify-center text-[10px] rounded-none ${
+                activeTab === 'address' ? 'bg-zinc-900 text-white' : 'bg-zinc-200 text-zinc-700'
+              }`}
+            >
+              2
+            </span>
+            <span>Address &amp; Contact</span>
+            {hasAddressError && <span className="w-1.5 h-1.5 bg-red-600 inline-block ml-1" />}
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab('sectors')}
+            className={`flex-1 py-2.5 px-3 flex items-center justify-center gap-2 border-b-2 font-bold uppercase tracking-wider transition-colors ${
+              activeTab === 'sectors'
+                ? 'border-zinc-950 bg-white text-zinc-950'
+                : 'border-transparent text-zinc-500 hover:text-zinc-800 hover:bg-zinc-100'
+            }`}
+          >
+            <span
+              className={`w-4 h-4 flex items-center justify-center text-[10px] rounded-none ${
+                activeTab === 'sectors' ? 'bg-zinc-900 text-white' : 'bg-zinc-200 text-zinc-700'
+              }`}
+            >
+              3
+            </span>
+            <span>Special Sectors</span>
           </button>
         </div>
 
@@ -263,22 +366,25 @@ export const ResidentFormModal: React.FC<ResidentFormModalProps> = ({
         <form onSubmit={handleSubmit} className="p-6 space-y-6 max-h-[75vh] overflow-y-auto">
           {generalError && (
             <div
-              className="p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700 flex items-start gap-2"
+              className="p-3 bg-red-50 border border-red-200 rounded-none text-xs font-mono text-red-700 flex items-start gap-2"
               data-testid="form-general-error"
             >
-              <AlertCircle className="w-5 h-5 text-red-500 shrink-0 mt-0.5" />
+              <AlertCircle className="w-4 h-4 text-red-500 shrink-0 mt-0.5" />
               <span>{generalError}</span>
             </div>
           )}
 
           {/* Section 1: Personal Demographics */}
-          <div className="space-y-4">
-            <h3 className="text-xs font-bold text-slate-600 uppercase tracking-wider border-b border-slate-100 pb-1">
-              Personal Demographics
-            </h3>
+          <div className={activeTab === 'demographics' ? 'space-y-4' : 'hidden'}>
+            <div className="flex items-center justify-between border-b border-zinc-200 pb-1.5">
+              <h3 className="text-xs font-bold text-zinc-900 uppercase tracking-wider font-mono">
+                [01] Personal Demographics
+              </h3>
+              <span className="text-[11px] font-mono text-zinc-500">Step 1 of 3</span>
+            </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                <label className="block text-xs font-semibold text-zinc-700 mb-1 font-mono uppercase">
                   First Name <span className="text-red-500">*</span>
                 </label>
                 <input
@@ -287,19 +393,19 @@ export const ResidentFormModal: React.FC<ResidentFormModalProps> = ({
                   value={firstName}
                   onChange={(e) => setFirstName(e.target.value)}
                   placeholder="e.g. Juan"
-                  className={`w-full px-3 py-2 text-sm border rounded-lg focus:outline-none focus:ring-2 ${
+                  className={`w-full px-3 py-2 text-sm border rounded-none focus:outline-none focus:ring-1 focus:ring-zinc-900 ${
                     errors.first_name
                       ? 'border-red-400 focus:ring-red-200'
-                      : 'border-slate-300 focus:ring-blue-100 focus:border-blue-500'
+                      : 'border-zinc-300'
                   }`}
                 />
                 {errors.first_name && (
-                  <p className="text-xs text-red-600 mt-1">{errors.first_name}</p>
+                  <p className="text-xs text-red-600 mt-1 font-mono">{errors.first_name}</p>
                 )}
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                <label className="block text-xs font-semibold text-zinc-700 mb-1 font-mono uppercase">
                   Middle Name
                 </label>
                 <input
@@ -308,12 +414,12 @@ export const ResidentFormModal: React.FC<ResidentFormModalProps> = ({
                   value={middleName}
                   onChange={(e) => setMiddleName(e.target.value)}
                   placeholder="e.g. Santos"
-                  className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-500"
+                  className="w-full px-3 py-2 text-sm border border-zinc-300 rounded-none focus:outline-none focus:ring-1 focus:ring-zinc-900"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                <label className="block text-xs font-semibold text-zinc-700 mb-1 font-mono uppercase">
                   Last Name <span className="text-red-500">*</span>
                 </label>
                 <input
@@ -322,33 +428,33 @@ export const ResidentFormModal: React.FC<ResidentFormModalProps> = ({
                   value={lastName}
                   onChange={(e) => setLastName(e.target.value)}
                   placeholder="e.g. Dela Cruz"
-                  className={`w-full px-3 py-2 text-sm border rounded-lg focus:outline-none focus:ring-2 ${
+                  className={`w-full px-3 py-2 text-sm border rounded-none focus:outline-none focus:ring-1 focus:ring-zinc-900 ${
                     errors.last_name
                       ? 'border-red-400 focus:ring-red-200'
-                      : 'border-slate-300 focus:ring-blue-100 focus:border-blue-500'
+                      : 'border-zinc-300'
                   }`}
                 />
                 {errors.last_name && (
-                  <p className="text-xs text-red-600 mt-1">{errors.last_name}</p>
+                  <p className="text-xs text-red-600 mt-1 font-mono">{errors.last_name}</p>
                 )}
               </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">Suffix</label>
+                <label className="block text-xs font-semibold text-zinc-700 mb-1 font-mono uppercase">Suffix</label>
                 <input
                   type="text"
                   name="suffix"
                   value={suffix}
                   onChange={(e) => setSuffix(e.target.value)}
                   placeholder="Jr., Sr., III"
-                  className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-500"
+                  className="w-full px-3 py-2 text-sm border border-zinc-300 rounded-none focus:outline-none focus:ring-1 focus:ring-zinc-900"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                <label className="block text-xs font-semibold text-zinc-700 mb-1 font-mono uppercase">
                   Birthdate <span className="text-red-500">*</span>
                 </label>
                 <input
@@ -357,50 +463,50 @@ export const ResidentFormModal: React.FC<ResidentFormModalProps> = ({
                   value={birthdate}
                   max={todayStr}
                   onChange={(e) => setBirthdate(e.target.value)}
-                  className={`w-full px-3 py-2 text-sm border rounded-lg focus:outline-none focus:ring-2 ${
+                  className={`w-full px-3 py-2 text-sm border rounded-none focus:outline-none focus:ring-1 focus:ring-zinc-900 font-mono ${
                     errors.birthdate
                       ? 'border-red-400 focus:ring-red-200'
-                      : 'border-slate-300 focus:ring-blue-100 focus:border-blue-500'
+                      : 'border-zinc-300'
                   }`}
                 />
                 {errors.birthdate && (
-                  <p className="text-xs text-red-600 mt-1">{errors.birthdate}</p>
+                  <p className="text-xs text-red-600 mt-1 font-mono">{errors.birthdate}</p>
                 )}
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                <label className="block text-xs font-semibold text-zinc-700 mb-1 font-mono uppercase">
                   Sex <span className="text-red-500">*</span>
                 </label>
                 <select
                   name="sex"
                   value={sex}
                   onChange={(e) => setSex(e.target.value as Sex)}
-                  className={`w-full px-3 py-2 text-sm border rounded-lg focus:outline-none focus:ring-2 ${
+                  className={`w-full px-3 py-2 text-sm border rounded-none focus:outline-none focus:ring-1 focus:ring-zinc-900 ${
                     errors.sex
                       ? 'border-red-400 focus:ring-red-200'
-                      : 'border-slate-300 focus:ring-blue-100 focus:border-blue-500'
+                      : 'border-zinc-300'
                   }`}
                 >
                   <option value="">Select Sex</option>
                   <option value="Male">Male</option>
                   <option value="Female">Female</option>
                 </select>
-                {errors.sex && <p className="text-xs text-red-600 mt-1">{errors.sex}</p>}
+                {errors.sex && <p className="text-xs text-red-600 mt-1 font-mono">{errors.sex}</p>}
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                <label className="block text-xs font-semibold text-zinc-700 mb-1 font-mono uppercase">
                   Civil Status <span className="text-red-500">*</span>
                 </label>
                 <select
                   name="civil_status"
                   value={civilStatus}
                   onChange={(e) => setCivilStatus(e.target.value as CivilStatus)}
-                  className={`w-full px-3 py-2 text-sm border rounded-lg focus:outline-none focus:ring-2 ${
+                  className={`w-full px-3 py-2 text-sm border rounded-none focus:outline-none focus:ring-1 focus:ring-zinc-900 ${
                     errors.civil_status
                       ? 'border-red-400 focus:ring-red-200'
-                      : 'border-slate-300 focus:ring-blue-100 focus:border-blue-500'
+                      : 'border-zinc-300'
                   }`}
                 >
                   <option value="">Select Status</option>
@@ -411,20 +517,23 @@ export const ResidentFormModal: React.FC<ResidentFormModalProps> = ({
                   <option value="Live-in">Live-in</option>
                 </select>
                 {errors.civil_status && (
-                  <p className="text-xs text-red-600 mt-1">{errors.civil_status}</p>
+                  <p className="text-xs text-red-600 mt-1 font-mono">{errors.civil_status}</p>
                 )}
               </div>
             </div>
           </div>
 
           {/* Section 2: Address & Contact */}
-          <div className="space-y-4">
-            <h3 className="text-xs font-bold text-slate-600 uppercase tracking-wider border-b border-slate-100 pb-1">
-              Address &amp; Contact Details
-            </h3>
+          <div className={activeTab === 'address' ? 'space-y-4' : 'hidden'}>
+            <div className="flex items-center justify-between border-b border-zinc-200 pb-1.5">
+              <h3 className="text-xs font-bold text-zinc-900 uppercase tracking-wider font-mono">
+                [02] Address &amp; Contact Details
+              </h3>
+              <span className="text-[11px] font-mono text-zinc-500">Step 2 of 3</span>
+            </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                <label className="block text-xs font-semibold text-zinc-700 mb-1 font-mono uppercase">
                   Purok / Sitio <span className="text-red-500">*</span>
                 </label>
                 <div className="relative">
@@ -435,39 +544,45 @@ export const ResidentFormModal: React.FC<ResidentFormModalProps> = ({
                     value={purok}
                     onChange={(e) => setPurok(e.target.value)}
                     placeholder="e.g. Purok 1"
-                    className={`w-full px-3 py-2 text-sm border rounded-lg focus:outline-none focus:ring-2 ${
+                    className={`w-full px-3 py-2 text-sm border rounded-none focus:outline-none focus:ring-1 focus:ring-zinc-900 ${
                       errors.purok
                         ? 'border-red-400 focus:ring-red-200'
-                        : 'border-slate-300 focus:ring-blue-100 focus:border-blue-500'
+                        : 'border-zinc-300'
                     }`}
                   />
                   <datalist id="purok-list">
-                    {DEFAULT_PUROKS.map((p) => (
+                    {purokOptions.map((p) => (
                       <option key={p} value={p} />
                     ))}
                   </datalist>
                 </div>
-                {errors.purok && <p className="text-xs text-red-600 mt-1">{errors.purok}</p>}
+                {errors.purok && <p className="text-xs text-red-600 mt-1 font-mono">{errors.purok}</p>}
               </div>
 
               <div className="md:col-span-2">
-                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                <label className="block text-xs font-semibold text-zinc-700 mb-1 font-mono uppercase">
                   House No. &amp; Street Address
                 </label>
                 <input
                   type="text"
+                  list="street-list"
                   name="house_no_street"
                   value={houseNoStreet}
                   onChange={(e) => setHouseNoStreet(e.target.value)}
                   placeholder="e.g. 123 Rizal St."
-                  className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-500"
+                  className="w-full px-3 py-2 text-sm border border-zinc-300 rounded-none focus:outline-none focus:ring-1 focus:ring-zinc-900"
                 />
+                <datalist id="street-list">
+                  {streetOptions.map((st) => (
+                    <option key={st} value={st} />
+                  ))}
+                </datalist>
               </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                <label className="block text-xs font-semibold text-zinc-700 mb-1 font-mono uppercase">
                   Contact Number
                 </label>
                 <input
@@ -476,42 +591,42 @@ export const ResidentFormModal: React.FC<ResidentFormModalProps> = ({
                   value={contactNo}
                   onChange={(e) => setContactNo(e.target.value)}
                   placeholder="0917-000-0000"
-                  className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-500"
+                  className="w-full px-3 py-2 text-sm border border-zinc-300 rounded-none focus:outline-none focus:ring-1 focus:ring-zinc-900 font-mono"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">Occupation</label>
+                <label className="block text-xs font-semibold text-zinc-700 mb-1 font-mono uppercase">Occupation</label>
                 <input
                   type="text"
                   name="occupation"
                   value={occupation}
                   onChange={(e) => setOccupation(e.target.value)}
                   placeholder="e.g. Farmer / Merchant"
-                  className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-500"
+                  className="w-full px-3 py-2 text-sm border border-zinc-300 rounded-none focus:outline-none focus:ring-1 focus:ring-zinc-900"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">Nationality</label>
+                <label className="block text-xs font-semibold text-zinc-700 mb-1 font-mono uppercase">Nationality</label>
                 <input
                   type="text"
                   name="nationality"
                   value={nationality}
                   onChange={(e) => setNationality(e.target.value)}
-                  className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-500"
+                  className="w-full px-3 py-2 text-sm border border-zinc-300 rounded-none focus:outline-none focus:ring-1 focus:ring-zinc-900"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                <label className="block text-xs font-semibold text-zinc-700 mb-1 font-mono uppercase">
                   Residency Status
                 </label>
                 <select
                   name="residency_status"
                   value={residencyStatus}
                   onChange={(e) => setResidencyStatus(e.target.value as ResidencyStatus)}
-                  className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-500"
+                  className="w-full px-3 py-2 text-sm border border-zinc-300 rounded-none focus:outline-none focus:ring-1 focus:ring-zinc-900"
                 >
                   <option value="Active">Active</option>
                   <option value="Moved Out">Moved Out</option>
@@ -522,86 +637,89 @@ export const ResidentFormModal: React.FC<ResidentFormModalProps> = ({
           </div>
 
           {/* Section 3: Special Sectors & Conditional IDs */}
-          <div className="space-y-4">
-            <h3 className="text-xs font-bold text-slate-600 uppercase tracking-wider border-b border-slate-100 pb-1">
-              Special Sector Classifications &amp; Sector IDs
-            </h3>
+          <div className={activeTab === 'sectors' ? 'space-y-4' : 'hidden'}>
+            <div className="flex items-center justify-between border-b border-zinc-200 pb-1.5">
+              <h3 className="text-xs font-bold text-zinc-900 uppercase tracking-wider font-mono">
+                [03] Special Sector Classifications &amp; Sector IDs
+              </h3>
+              <span className="text-[11px] font-mono text-zinc-500">Step 3 of 3</span>
+            </div>
 
             {/* Checkbox Grid */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 bg-slate-50 p-4 rounded-lg border border-slate-200">
-              <label className="flex items-center gap-2 text-xs font-medium text-slate-700 cursor-pointer">
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 bg-zinc-50 p-4 rounded-none border border-zinc-200">
+              <label className="flex items-center gap-2 text-xs font-medium text-zinc-800 cursor-pointer">
                 <input
                   type="checkbox"
                   name="is_voter"
                   checked={isVoter}
                   onChange={(e) => setIsVoter(e.target.checked)}
-                  className="rounded text-blue-600 focus:ring-blue-500"
+                  className="rounded-none text-zinc-900 focus:ring-0"
                 />
                 <span>Registered Voter</span>
               </label>
 
-              <label className="flex items-center gap-2 text-xs font-medium text-slate-700 cursor-pointer">
+              <label className="flex items-center gap-2 text-xs font-medium text-zinc-800 cursor-pointer">
                 <input
                   type="checkbox"
                   name="is_pwd"
                   checked={isPwd}
                   onChange={(e) => setIsPwd(e.target.checked)}
-                  className="rounded text-purple-600 focus:ring-purple-500"
+                  className="rounded-none text-zinc-900 focus:ring-0"
                 />
                 <span>PWD</span>
               </label>
 
-              <label className="flex items-center gap-2 text-xs font-medium text-slate-700 cursor-pointer">
+              <label className="flex items-center gap-2 text-xs font-medium text-zinc-800 cursor-pointer">
                 <input
                   type="checkbox"
                   name="is_solo_parent"
                   checked={isSoloParent}
                   onChange={(e) => setIsSoloParent(e.target.checked)}
-                  className="rounded text-rose-600 focus:ring-rose-500"
+                  className="rounded-none text-zinc-900 focus:ring-0"
                 />
                 <span>Solo Parent</span>
               </label>
 
-              <label className="flex items-center gap-2 text-xs font-medium text-slate-700 cursor-pointer">
+              <label className="flex items-center gap-2 text-xs font-medium text-zinc-800 cursor-pointer">
                 <input
                   type="checkbox"
                   name="is_4ps"
                   checked={is4ps}
                   onChange={(e) => setIs4ps(e.target.checked)}
-                  className="rounded text-emerald-600 focus:ring-emerald-500"
+                  className="rounded-none text-zinc-900 focus:ring-0"
                 />
                 <span>4Ps Beneficiary</span>
               </label>
 
-              <label className="flex items-center gap-2 text-xs font-medium text-slate-700 cursor-pointer">
+              <label className="flex items-center gap-2 text-xs font-medium text-zinc-800 cursor-pointer">
                 <input
                   type="checkbox"
                   name="is_indigent"
                   checked={isIndigent}
                   onChange={(e) => setIsIndigent(e.target.checked)}
-                  className="rounded text-amber-600 focus:ring-amber-500"
+                  className="rounded-none text-zinc-900 focus:ring-0"
                 />
                 <span>Indigent</span>
               </label>
 
-              <label className="flex items-center gap-2 text-xs font-medium text-slate-700 cursor-pointer">
+              <label className="flex items-center gap-2 text-xs font-medium text-zinc-800 cursor-pointer">
                 <input
                   type="checkbox"
                   name="is_ofw"
                   checked={isOfw}
                   onChange={(e) => setIsOfw(e.target.checked)}
-                  className="rounded text-sky-600 focus:ring-sky-500"
+                  className="rounded-none text-zinc-900 focus:ring-0"
                 />
                 <span>OFW</span>
               </label>
 
-              <label className="flex items-center gap-2 text-xs font-medium text-slate-700 cursor-pointer">
+              <label className="flex items-center gap-2 text-xs font-medium text-zinc-800 cursor-pointer">
                 <input
                   type="checkbox"
                   name="is_osy"
                   checked={isOsy}
                   onChange={(e) => setIsOsy(e.target.checked)}
-                  className="rounded text-slate-700 focus:ring-slate-500"
+                  className="rounded-none text-zinc-900 focus:ring-0"
                 />
                 <span>Out-of-School Youth (OSY)</span>
               </label>
@@ -611,7 +729,7 @@ export const ResidentFormModal: React.FC<ResidentFormModalProps> = ({
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {isVoter && (
                 <div data-testid="precinct-field">
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">
+                  <label className="block text-xs font-semibold text-zinc-700 mb-1 font-mono uppercase">
                     Precinct Number
                   </label>
                   <input
@@ -620,7 +738,7 @@ export const ResidentFormModal: React.FC<ResidentFormModalProps> = ({
                     value={precinctNo}
                     onChange={(e) => setPrecinctNo(e.target.value)}
                     placeholder="e.g. 0012A"
-                    className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-100 focus:border-teal-500"
+                    className="w-full px-3 py-2 text-sm border border-zinc-300 rounded-none focus:outline-none focus:ring-1 focus:ring-zinc-900 font-mono"
                   />
                 </div>
               )}
@@ -628,7 +746,7 @@ export const ResidentFormModal: React.FC<ResidentFormModalProps> = ({
               {isPwd && (
                 <>
                   <div data-testid="pwd-id-field">
-                    <label className="block text-xs font-semibold text-slate-700 mb-1">
+                    <label className="block text-xs font-semibold text-zinc-700 mb-1 font-mono uppercase">
                       PWD ID Number
                     </label>
                     <input
@@ -637,11 +755,11 @@ export const ResidentFormModal: React.FC<ResidentFormModalProps> = ({
                       value={pwdIdNo}
                       onChange={(e) => setPwdIdNo(e.target.value)}
                       placeholder="e.g. PWD-2026-001"
-                      className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-100 focus:border-purple-500"
+                      className="w-full px-3 py-2 text-sm border border-zinc-300 rounded-none focus:outline-none focus:ring-1 focus:ring-zinc-900 font-mono"
                     />
                   </div>
                   <div data-testid="pwd-disability-field">
-                    <label className="block text-xs font-semibold text-slate-700 mb-1">
+                    <label className="block text-xs font-semibold text-zinc-700 mb-1 font-mono uppercase">
                       Disability Type
                     </label>
                     <input
@@ -650,7 +768,7 @@ export const ResidentFormModal: React.FC<ResidentFormModalProps> = ({
                       value={pwdDisabilityType}
                       onChange={(e) => setPwdDisabilityType(e.target.value)}
                       placeholder="e.g. Visual Impairment, Mobility"
-                      className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-100 focus:border-purple-500"
+                      className="w-full px-3 py-2 text-sm border border-zinc-300 rounded-none focus:outline-none focus:ring-1 focus:ring-zinc-900"
                     />
                   </div>
                 </>
@@ -658,7 +776,7 @@ export const ResidentFormModal: React.FC<ResidentFormModalProps> = ({
 
               {isSoloParent && (
                 <div data-testid="solo-parent-id-field">
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">
+                  <label className="block text-xs font-semibold text-zinc-700 mb-1 font-mono uppercase">
                     Solo Parent ID Number
                   </label>
                   <input
@@ -667,13 +785,13 @@ export const ResidentFormModal: React.FC<ResidentFormModalProps> = ({
                     value={soloParentIdNo}
                     onChange={(e) => setSoloParentIdNo(e.target.value)}
                     placeholder="e.g. SP-2026-0042"
-                    className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-rose-100 focus:border-rose-500"
+                    className="w-full px-3 py-2 text-sm border border-zinc-300 rounded-none focus:outline-none focus:ring-1 focus:ring-zinc-900 font-mono"
                   />
                 </div>
               )}
 
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                <label className="block text-xs font-semibold text-zinc-700 mb-1 font-mono uppercase">
                   Senior Citizen ID No. (OSCA)
                 </label>
                 <input
@@ -682,43 +800,68 @@ export const ResidentFormModal: React.FC<ResidentFormModalProps> = ({
                   value={seniorIdNo}
                   onChange={(e) => setSeniorIdNo(e.target.value)}
                   placeholder="e.g. OSCA-9921"
-                  className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-500"
+                  className="w-full px-3 py-2 text-sm border border-zinc-300 rounded-none focus:outline-none focus:ring-1 focus:ring-zinc-900 font-mono"
                 />
-                <p className="text-[10px] text-slate-400 mt-1">
+                <p className="text-[10px] text-zinc-400 font-mono mt-1">
                   Senior status is auto-computed when birthdate indicates age &ge; 60.
                 </p>
               </div>
             </div>
           </div>
 
-          {/* Modal Footer */}
-          <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-200">
-            <button
-              type="button"
-              onClick={onClose}
-              disabled={submitting}
-              className="px-4 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={submitting}
-              data-testid="submit-resident-btn"
-              className="px-4 py-2 text-sm font-semibold text-white bg-blue-600 rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors flex items-center gap-1.5"
-            >
-              {submitting ? (
-                <>
-                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                  <span>Saving...</span>
-                </>
+          {/* Modal Footer with Stepper Controls */}
+          <div className="flex items-center justify-between gap-2 pt-4 border-t border-zinc-200">
+            <div>
+              {activeTab === 'demographics' ? (
+                <button
+                  type="button"
+                  onClick={onClose}
+                  disabled={submitting}
+                  className="px-3.5 py-1.5 text-xs font-mono font-medium text-zinc-800 bg-white border border-zinc-300 rounded-none hover:bg-zinc-100 uppercase tracking-wider transition-colors"
+                >
+                  Cancel
+                </button>
               ) : (
-                <>
-                  {isEdit ? <Save className="w-4 h-4" /> : <UserPlus className="w-4 h-4" />}
-                  <span>{isEdit ? 'Save Changes' : 'Register Resident'}</span>
-                </>
+                <button
+                  type="button"
+                  onClick={() => setActiveTab(activeTab === 'sectors' ? 'address' : 'demographics')}
+                  className="px-3 py-1.5 text-xs font-mono font-semibold text-zinc-700 bg-zinc-100 hover:bg-zinc-200 border border-zinc-300 rounded-none uppercase tracking-wider transition-colors"
+                >
+                  &larr; Previous Step
+                </button>
               )}
-            </button>
+            </div>
+
+            <div className="flex items-center gap-2">
+              {activeTab !== 'sectors' && (
+                <button
+                  type="button"
+                  onClick={() => setActiveTab(activeTab === 'demographics' ? 'address' : 'sectors')}
+                  className="px-3.5 py-1.5 text-xs font-mono font-semibold text-zinc-900 bg-zinc-100 hover:bg-zinc-200 border border-zinc-400 rounded-none uppercase tracking-wider transition-colors"
+                >
+                  {activeTab === 'demographics' ? 'Next: Address \u2192' : 'Next: Special Sectors \u2192'}
+                </button>
+              )}
+
+              <button
+                type="submit"
+                disabled={submitting}
+                data-testid="submit-resident-btn"
+                className="px-4 py-1.5 text-xs font-mono font-semibold text-white bg-zinc-900 hover:bg-black disabled:opacity-50 rounded-none uppercase tracking-wider transition-colors flex items-center gap-1.5 shadow-none"
+              >
+                {submitting ? (
+                  <>
+                    <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-none animate-spin" />
+                    <span>Saving...</span>
+                  </>
+                ) : (
+                  <>
+                    {isEdit ? <Save className="w-3.5 h-3.5" /> : <UserPlus className="w-3.5 h-3.5" />}
+                    <span>{isEdit ? 'Save Changes' : 'Register Resident'}</span>
+                  </>
+                )}
+              </button>
+            </div>
           </div>
         </form>
       </div>

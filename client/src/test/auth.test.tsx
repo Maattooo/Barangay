@@ -129,7 +129,7 @@ describe('Authentication Flow & Session State', () => {
     expect(alert).toHaveTextContent(/invalid username or password/i);
   });
 
-  it('Quick Demo account autofill buttons correctly populate credentials form', async () => {
+  it('Direct credential input correctly populates credentials form', async () => {
     const user = userEvent.setup();
 
     vi.spyOn(globalThis, 'fetch').mockResolvedValue(
@@ -147,30 +147,8 @@ describe('Authentication Flow & Session State', () => {
     const usernameInput = screen.getByLabelText(/username/i) as HTMLInputElement;
     const passwordInput = screen.getByLabelText(/password/i) as HTMLInputElement;
 
-    // Click demo clerk button
-    const clerkBtn = screen.getByRole('button', { name: /clerk/i });
-    await user.click(clerkBtn);
-
-    expect(usernameInput.value).toBe('clerk');
-    expect(passwordInput.value).toBe('clerk123');
-
-    // Click demo treasurer button
-    const treasurerBtn = screen.getByRole('button', { name: /treasurer/i });
-    await user.click(treasurerBtn);
-
-    expect(usernameInput.value).toBe('treasurer');
-    expect(passwordInput.value).toBe('treasurer123');
-
-    // Click demo lupon button
-    const luponBtn = screen.getByRole('button', { name: /lupon/i });
-    await user.click(luponBtn);
-
-    expect(usernameInput.value).toBe('lupon');
-    expect(passwordInput.value).toBe('lupon123');
-
-    // Click demo admin button
-    const adminBtn = screen.getByRole('button', { name: /admin \(secretary\)/i });
-    await user.click(adminBtn);
+    await user.type(usernameInput, 'admin');
+    await user.type(passwordInput, 'admin123');
 
     expect(usernameInput.value).toBe('admin');
     expect(passwordInput.value).toBe('admin123');
