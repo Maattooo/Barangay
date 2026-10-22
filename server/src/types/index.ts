@@ -34,3 +34,4 @@ export * from './blotter';
 export * from './officials';
 export * from './templates';
 export * from './system';
+export * from './issuances';

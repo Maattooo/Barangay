@@ -12,6 +12,7 @@ import blotterRoutes from './routes/blotter.routes';
 import officialsRoutes from './routes/officials.routes';
 import templatesRoutes from './routes/templates.routes';
 import systemRoutes from './routes/system.routes';
+import issuancesRoutes from './routes/issuances.routes';
 
 const app = express();
 
@@ -39,6 +40,7 @@ app.use('/api/blotter', blotterRoutes);
 app.use('/api/officials', officialsRoutes);
 app.use('/api/templates', templatesRoutes);
 app.use('/api/system', systemRoutes);
+app.use('/api/issuances', issuancesRoutes);
 
 // Production static file serving & SPA fallback
 const clientDistPath = path.resolve(__dirname, '../../client/dist');
