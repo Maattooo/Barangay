@@ -30,3 +30,4 @@ declare global {
 
 export * from './audit';
 export * from './resident';
+export * from './blotter';

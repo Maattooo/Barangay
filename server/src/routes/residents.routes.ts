@@ -13,6 +13,7 @@ import {
   enrichResident,
   SQL_DYNAMIC_AGE
 } from '../controllers/residents.controller';
+import { checkResidentBlotterController } from '../controllers/blotter.controller';
 import { db } from '../db/connection';
 
 const router = Router();
@@ -80,6 +81,18 @@ router.post(
   authenticate,
   requireRole('Admin', 'Clerk'),
   createResident
+);
+
+/**
+ * GET /api/residents/:id/blotter-check
+ * Automated blotter gatekeeper clearance check.
+ * Accessible to Admin, Clerk, Treasurer, Lupon.
+ */
+router.get(
+  '/:id/blotter-check',
+  authenticate,
+  requireRole('Admin', 'Clerk', 'Treasurer', 'Lupon'),
+  checkResidentBlotterController
 );
 
 /**

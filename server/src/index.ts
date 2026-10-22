@@ -8,6 +8,7 @@ import authRoutes from './routes/auth.routes';
 import usersRoutes from './routes/users.routes';
 import auditRoutes from './routes/audit.routes';
 import residentsRoutes from './routes/residents.routes';
+import blotterRoutes from './routes/blotter.routes';
 
 const app = express();
 
@@ -31,6 +32,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/users', usersRoutes);
 app.use('/api/audit-logs', auditRoutes);
 app.use('/api/residents', residentsRoutes);
+app.use('/api/blotter', blotterRoutes);
 
 // Production static file serving & SPA fallback
 const clientDistPath = path.resolve(__dirname, '../../client/dist');
