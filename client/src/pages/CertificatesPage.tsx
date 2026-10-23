@@ -59,7 +59,9 @@ export const CertificatesPage: React.FC = () => {
   // Load templates for filter dropdown
   useEffect(() => {
     api.getTemplates()
-      .then((data: CertificateTemplate[]) => setTemplates(data))
+      .then((data: CertificateTemplate[]) =>
+        setTemplates(data.filter((t) => (t.template_category || 'certificate') === 'certificate'))
+      )
       .catch((err: unknown) => console.error('Failed to load templates:', err));
   }, []);
 

@@ -6,7 +6,9 @@ import {
   getBlotterByIdController,
   createBlotterController,
   updateBlotterController,
-  archiveBlotterController
+  archiveBlotterController,
+  previewBlotterPrintController,
+  exportBlotterDocxController
 } from '../controllers/blotter.controller';
 
 const router = Router();
@@ -33,6 +35,30 @@ router.post(
   authenticate,
   requireRole('Admin', 'Lupon'),
   createBlotterController
+);
+
+/**
+ * POST /api/blotter/:id/print-preview
+ * Render interpolated Blotter / KP form for printing or previewing.
+ * Restricted to Admin and Lupon.
+ */
+router.post(
+  '/:id/print-preview',
+  authenticate,
+  requireRole('Admin', 'Lupon'),
+  previewBlotterPrintController
+);
+
+/**
+ * POST /api/blotter/:id/export-docx
+ * Export filled Blotter / KP form as MS Word (.docx).
+ * Restricted to Admin and Lupon.
+ */
+router.post(
+  '/:id/export-docx',
+  authenticate,
+  requireRole('Admin', 'Lupon'),
+  exportBlotterDocxController
 );
 
 /**

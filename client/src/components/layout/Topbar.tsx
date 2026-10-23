@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
+import { useSettings } from '../../context/SettingsContext';
 import { SystemInfoResponse } from '../../types/system';
 import api from '../../services/api';
 import { Menu, LogOut, Copy, Check, Wifi, Building } from 'lucide-react';
@@ -11,6 +12,7 @@ interface TopbarProps {
 
 export const Topbar: React.FC<TopbarProps> = ({ onMenuClick, onSystemInfoLoaded }) => {
   const { user, role, logout } = useAuth();
+  const { settings } = useSettings();
   const [systemInfo, setSystemInfo] = useState<SystemInfoResponse | null>(null);
   const [copied, setCopied] = useState(false);
 
@@ -37,7 +39,7 @@ export const Topbar: React.FC<TopbarProps> = ({ onMenuClick, onSystemInfoLoaded 
 
   const lanIp = systemInfo?.lan_ips?.[0] || '127.0.0.1';
   const hostUrl = `http://${lanIp}:3000`;
-  const barangayName = systemInfo?.settings?.barangay_name || 'Barangay Poblacion';
+  const barangayName = settings.barangay_name || systemInfo?.settings?.barangay_name || 'Barangay Poblacion';
 
   const handleCopy = async () => {
     try {

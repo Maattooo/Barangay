@@ -110,7 +110,12 @@ export const NewCertificatePage: React.FC = () => {
     api.getTemplates()
       .then((data: CertificateTemplate[]) => {
         if (!isMounted) return;
-        setTemplates(data.filter((t: CertificateTemplate) => t.is_active === 1));
+        setTemplates(
+          data.filter(
+            (t: CertificateTemplate) =>
+              t.is_active === 1 && (t.template_category || 'certificate') === 'certificate'
+          )
+        );
       })
       .catch((err: unknown) => console.error('Failed to load templates:', err));
 
@@ -915,7 +920,11 @@ export const NewCertificatePage: React.FC = () => {
             resident_name: selectedResident ? `${selectedResident.first_name} ${selectedResident.last_name}` : undefined,
             signatory_name: selectedSignatory?.full_name,
             signatory_position: selectedSignatory?.position,
-            is_oic_signing: isOicSigning
+            is_oic_signing: isOicSigning,
+            paper_size: previewData.paper_size,
+            header_html: previewData.header_html,
+            header_config_json: previewData.header_config_json,
+            footer_html: previewData.footer_html
           }}
           onSuccess={(result) => {
             setIsPreviewModalOpen(false);

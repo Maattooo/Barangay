@@ -943,4 +943,52 @@ describe('Blotter Case Management & Automated Gatekeeper Engine Test Suite (blot
       logAuditSpy.mockRestore();
     });
   });
+
+  // --------------------------------------------------------------------------
+  // 11. Blotter Print Preview & MS Word (.docx) Export
+  // --------------------------------------------------------------------------
+  describe('11. Blotter Print Preview & MS Word (.docx) Export', () => {
+    it('renders interpolated Blotter/KP print preview HTML and exports valid .docx for Admin and Lupon', async () => {
+      const firstCase = db.prepare('SELECT * FROM blotter_records ORDER BY id ASC LIMIT 1').get() as any;
+      expect(firstCase).toBeDefined();
+
+      const previewRes = await request(app)
+        .post(`/api/blotter/${firstCase.id}/print-preview`)
+        .set('Authorization', `Bearer ${luponToken}`)
+        .send({
+          template_code: 'KP_SUMMONS',
+          paper_size: 'long',
+          hearing_date: 'November 15, 2026 at 10:00 AM',
+          log_print: true
+        });
+
+      expect(previewRes.status).toBe(200);
+      expect(previewRes.body.template_code).toBe('KP_SUMMONS');
+      expect(previewRes.body.paper_size).toBe('long');
+      expect(previewRes.body.html).toContain(firstCase.complainant_name.toUpperCase());
+      expect(previewRes.body.html).toContain(firstCase.respondent_name.toUpperCase());
+      expect(previewRes.body.html).toContain('November 15, 2026 at 10:00 AM');
+      expect(previewRes.body.header_html).toMatch(/Lupong Tagapamayapa/i);
+
+      const docxRes = await request(app)
+        .post(`/api/blotter/${firstCase.id}/export-docx`)
+        .set('Authorization', `Bearer ${luponToken}`)
+        .send({
+          template_code: 'BLOTTER_EXTRACT',
+          paper_size: 'short'
+        })
+        .buffer(true)
+        .parse((res, callback) => {
+          const chunks: Buffer[] = [];
+          res.on('data', (chunk) => chunks.push(Buffer.from(chunk)));
+          res.on('end', () => callback(null, Buffer.concat(chunks)));
+        });
+
+      expect(docxRes.status).toBe(200);
+      expect(docxRes.headers['content-type']).toContain('application/vnd.openxmlformats-officedocument.wordprocessingml.document');
+      const docxBuf = docxRes.body as Buffer;
+      expect(Buffer.isBuffer(docxBuf)).toBe(true);
+      expect(docxBuf.subarray(0, 2).toString('utf8')).toBe('PK');
+    });
+  });
 });

@@ -13,13 +13,17 @@ import {
   HardDrive,
   Copy,
   Check,
-  MapPin
+  MapPin,
+  Info
 } from 'lucide-react';
 import api from '../services/api';
+import { useSettings } from '../context/SettingsContext';
 import { UserAccount } from '../types/admin';
 import UserFormModal from '../components/settings/UserFormModal';
 
 export const SettingsPage: React.FC = () => {
+  const { updateSettings } = useSettings();
+
   // System Info & Settings
   const [lanIps, setLanIps] = useState<string[]>([]);
   const [dbSizeBytes, setDbSizeBytes] = useState<number>(0);
@@ -32,6 +36,9 @@ export const SettingsPage: React.FC = () => {
   const [contactEmail, setContactEmail] = useState('');
   const [barangayLogoUrl, setBarangayLogoUrl] = useState('');
   const [cityLogoUrl, setCityLogoUrl] = useState('');
+  const [barangaySealMeta, setBarangaySealMeta] = useState<{ sizeStr: string; dims: string } | null>(null);
+  const [citySealMeta, setCitySealMeta] = useState<{ sizeStr: string; dims: string } | null>(null);
+  const [sealValidationError, setSealValidationError] = useState<string | null>(null);
   const [savingSettings, setSavingSettings] = useState(false);
   const [settingsSaved, setSettingsSaved] = useState(false);
   const [settingsError, setSettingsError] = useState<string | null>(null);
@@ -153,9 +160,35 @@ export const SettingsPage: React.FC = () => {
     };
 
     try {
-      await api.updateSystemSettings(payload);
+      await updateSettings(payload);
+
+      // Auto-sync letterhead across certificate and blotter templates with the new metadata and seals
+      const updatedHeaderConfig = {
+        showLeftSeal: true,
+        showRightSeal: true,
+        sealSizePx: 64,
+        borderStyle: 'double',
+        alignment: 'center',
+        barangayLogoUrl: barangayLogoUrl,
+        cityLogoUrl: cityLogoUrl
+      };
+      const updatedHeaderHtml = `<p style="margin: 0; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px;">Republic of the Philippines</p>
+<p style="margin: 0; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px;">Province of {{province_name}}</p>
+<p style="margin: 0; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px;">City of {{municipality_name}}</p>
+<h2 style="font-size: 16px; font-weight: bold; text-transform: uppercase; letter-spacing: 1.5px; margin: 4px 0 2px 0;">BARANGAY {{barangay_name}}</h2>
+<p style="margin: 0; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px;">OFFICE OF THE PUNONG BARANGAY</p>`;
+
+      try {
+        await api.syncHeaderAcrossTemplates({
+          header_html: updatedHeaderHtml,
+          header_config_json: JSON.stringify(updatedHeaderConfig)
+        });
+      } catch {
+        // Non-blocking sync fallback
+      }
+
       setSettingsSaved(true);
-      setTimeout(() => setSettingsSaved(false), 4000);
+      setTimeout(() => setSettingsSaved(false), 5000);
     } catch (err: any) {
       setSettingsError(err?.message || 'Settings update acknowledged.');
     } finally {
@@ -212,18 +245,64 @@ export const SettingsPage: React.FC = () => {
   };
 
   const handleImageFileChange = (e: React.ChangeEvent<HTMLInputElement>, type: 'barangay' | 'city') => {
+    setSealValidationError(null);
     const file = e.target.files?.[0];
     if (!file) return;
+
+    // Allowed image formats: PNG, SVG, JPG, WEBP
+    const validExtensions = /\.(png|jpe?g|webp|svg)$/i;
+    const isImageMime = file.type.startsWith('image/');
+
+    if (!isImageMime && !validExtensions.test(file.name)) {
+      setSealValidationError(
+        `Invalid file "${file.name}". Acceptable seal formats: PNG, SVG, JPG, or WEBP.`
+      );
+      e.target.value = '';
+      return;
+    }
+
+    // Maximum file size limit: 2 MB
+    const maxSizeBytes = 2 * 1024 * 1024;
+    if (file.size > maxSizeBytes) {
+      const sizeMb = (file.size / (1024 * 1024)).toFixed(2);
+      setSealValidationError(
+        `File "${file.name}" exceeds the 2 MB limit (${sizeMb} MB). Please compress or choose a file under 2 MB.`
+      );
+      e.target.value = '';
+      return;
+    }
+
+    const sizeKb = Math.round(file.size / 1024);
+    const sizeStr = sizeKb > 1024 ? `${(sizeKb / 1024).toFixed(2)} MB` : `${sizeKb} KB`;
+
     const reader = new FileReader();
     reader.onload = (loadEvent) => {
       const dataUrl = loadEvent.target?.result as string;
-      if (type === 'barangay') {
-        setBarangayLogoUrl(dataUrl);
-      } else {
-        setCityLogoUrl(dataUrl);
-      }
+      const img = new Image();
+      img.onload = () => {
+        const meta = { sizeStr, dims: `${img.naturalWidth}×${img.naturalHeight}px` };
+        if (type === 'barangay') {
+          setBarangayLogoUrl(dataUrl);
+          setBarangaySealMeta(meta);
+        } else {
+          setCityLogoUrl(dataUrl);
+          setCitySealMeta(meta);
+        }
+      };
+      img.onerror = () => {
+        const meta = { sizeStr, dims: 'Vector/Custom' };
+        if (type === 'barangay') {
+          setBarangayLogoUrl(dataUrl);
+          setBarangaySealMeta(meta);
+        } else {
+          setCityLogoUrl(dataUrl);
+          setCitySealMeta(meta);
+        }
+      };
+      img.src = dataUrl;
     };
     reader.readAsDataURL(file);
+    e.target.value = '';
   };
 
   // Handle Hot Backup Download
@@ -296,13 +375,19 @@ export const SettingsPage: React.FC = () => {
             {settingsSaved && (
               <div className="p-2.5 bg-emerald-50 border border-emerald-300 rounded-none text-xs text-emerald-800 font-medium flex items-center gap-2">
                 <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                <span>Barangay metadata saved successfully!</span>
+                <span>Barangay metadata saved and letterheads synchronized across all print templates!</span>
               </div>
             )}
             {settingsError && (
               <div className="p-2.5 bg-amber-50 border border-amber-300 rounded-none text-xs text-amber-800 font-medium flex items-center gap-2">
                 <AlertCircle className="w-4 h-4 text-amber-600 shrink-0" />
                 <span>{settingsError}</span>
+              </div>
+            )}
+            {sealValidationError && (
+              <div className="p-2.5 bg-red-50 border border-red-300 rounded-none text-xs text-red-800 font-medium flex items-center gap-2">
+                <AlertCircle className="w-4 h-4 text-red-600 shrink-0" />
+                <span>{sealValidationError}</span>
               </div>
             )}
 
@@ -401,6 +486,18 @@ export const SettingsPage: React.FC = () => {
               <span className="block text-xs font-semibold uppercase text-zinc-700">
                 Official Letterhead Seals &amp; Logos
               </span>
+
+              {/* Specifications Card */}
+              <div className="p-2.5 bg-zinc-50 border border-zinc-200 text-zinc-600 text-[11px] font-mono flex items-start gap-2">
+                <Info className="w-3.5 h-3.5 text-zinc-500 shrink-0 mt-0.5" />
+                <div className="space-y-0.5">
+                  <p className="font-semibold text-zinc-800 uppercase tracking-tight">Accepted Seal Specifications</p>
+                  <p className="text-[10px] text-zinc-500">
+                    Formats: <span className="text-zinc-800 font-semibold">PNG, SVG, JPG, WEBP</span> &bull; Max Size: <span className="text-zinc-800 font-semibold">2 MB</span> &bull; Recommended: <span className="text-zinc-800 font-semibold">Transparent PNG (512&times;512px to 1024&times;1024px, 1:1 square)</span>
+                  </p>
+                </div>
+              </div>
+
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {/* Barangay Seal */}
                 <div className="p-2.5 border border-zinc-200 bg-zinc-50 rounded-none space-y-1.5">
@@ -409,7 +506,10 @@ export const SettingsPage: React.FC = () => {
                     {barangayLogoUrl && (
                       <button
                         type="button"
-                        onClick={() => setBarangayLogoUrl('')}
+                        onClick={() => {
+                          setBarangayLogoUrl('');
+                          setBarangaySealMeta(null);
+                        }}
                         className="text-[10px] text-red-600 hover:underline"
                       >
                         Remove
@@ -417,20 +517,31 @@ export const SettingsPage: React.FC = () => {
                     )}
                   </div>
                   {barangayLogoUrl ? (
-                    <div className="flex items-center gap-2">
-                      <img
-                        src={barangayLogoUrl}
-                        alt="Barangay Seal Preview"
-                        className="w-12 h-12 object-contain border border-zinc-300 bg-white p-0.5"
-                      />
-                      <span className="text-[10px] text-emerald-700 font-mono">Custom Seal Active</span>
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-12 h-12 border border-zinc-300 bg-white p-0.5 flex items-center justify-center shrink-0">
+                        <img
+                          src={barangayLogoUrl}
+                          alt="Barangay Seal Preview"
+                          className="max-w-full max-h-full object-contain"
+                        />
+                      </div>
+                      <div className="space-y-0.5 overflow-hidden">
+                        <div className="text-[10px] text-emerald-700 font-mono font-medium">Custom Seal Active</div>
+                        {barangaySealMeta ? (
+                          <div className="text-[10px] text-zinc-500 font-mono">
+                            {barangaySealMeta.dims} &bull; {barangaySealMeta.sizeStr}
+                          </div>
+                        ) : (
+                          <div className="text-[10px] text-zinc-400 font-mono">Loaded from Settings</div>
+                        )}
+                      </div>
                     </div>
                   ) : (
                     <div className="text-[10px] text-zinc-400 font-mono">Default Circular Seal</div>
                   )}
                   <input
                     type="file"
-                    accept="image/*"
+                    accept=".png,.jpg,.jpeg,.webp,.svg,image/png,image/jpeg,image/webp,image/svg+xml"
                     onChange={(e) => handleImageFileChange(e, 'barangay')}
                     className="block w-full text-[10px] text-zinc-600 file:mr-2 file:py-1 file:px-2 file:rounded-none file:border file:border-zinc-300 file:text-[10px] file:bg-white file:text-zinc-800 hover:file:bg-zinc-100 cursor-pointer"
                   />
@@ -443,7 +554,10 @@ export const SettingsPage: React.FC = () => {
                     {cityLogoUrl && (
                       <button
                         type="button"
-                        onClick={() => setCityLogoUrl('')}
+                        onClick={() => {
+                          setCityLogoUrl('');
+                          setCitySealMeta(null);
+                        }}
                         className="text-[10px] text-red-600 hover:underline"
                       >
                         Remove
@@ -451,20 +565,31 @@ export const SettingsPage: React.FC = () => {
                     )}
                   </div>
                   {cityLogoUrl ? (
-                    <div className="flex items-center gap-2">
-                      <img
-                        src={cityLogoUrl}
-                        alt="City Seal Preview"
-                        className="w-12 h-12 object-contain border border-zinc-300 bg-white p-0.5"
-                      />
-                      <span className="text-[10px] text-emerald-700 font-mono">Custom Seal Active</span>
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-12 h-12 border border-zinc-300 bg-white p-0.5 flex items-center justify-center shrink-0">
+                        <img
+                          src={cityLogoUrl}
+                          alt="City Seal Preview"
+                          className="max-w-full max-h-full object-contain"
+                        />
+                      </div>
+                      <div className="space-y-0.5 overflow-hidden">
+                        <div className="text-[10px] text-emerald-700 font-mono font-medium">Custom Seal Active</div>
+                        {citySealMeta ? (
+                          <div className="text-[10px] text-zinc-500 font-mono">
+                            {citySealMeta.dims} &bull; {citySealMeta.sizeStr}
+                          </div>
+                        ) : (
+                          <div className="text-[10px] text-zinc-400 font-mono">Loaded from Settings</div>
+                        )}
+                      </div>
                     </div>
                   ) : (
                     <div className="text-[10px] text-zinc-400 font-mono">Default Circular Seal</div>
                   )}
                   <input
                     type="file"
-                    accept="image/*"
+                    accept=".png,.jpg,.jpeg,.webp,.svg,image/png,image/jpeg,image/webp,image/svg+xml"
                     onChange={(e) => handleImageFileChange(e, 'city')}
                     className="block w-full text-[10px] text-zinc-600 file:mr-2 file:py-1 file:px-2 file:rounded-none file:border file:border-zinc-300 file:text-[10px] file:bg-white file:text-zinc-800 hover:file:bg-zinc-100 cursor-pointer"
                   />

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Scale, Loader2, AlertCircle } from 'lucide-react';
+import { X, Scale, Loader2, AlertCircle, Printer } from 'lucide-react';
 import api from '../../services/api';
 import { BlotterRecord, BlotterStatus, UpdateBlotterInput } from '../../types/admin';
 
@@ -8,13 +8,15 @@ interface BlotterSettleModalProps {
   onClose: () => void;
   onSuccess: () => void;
   record: BlotterRecord | null;
+  onOpenPrint?: (record: BlotterRecord) => void;
 }
 
 export const BlotterSettleModal: React.FC<BlotterSettleModalProps> = ({
   isOpen,
   onClose,
   onSuccess,
-  record
+  record,
+  onOpenPrint
 }) => {
   const [status, setStatus] = useState<BlotterStatus>('Settled');
   const [settlementNotes, setSettlementNotes] = useState('');
@@ -199,29 +201,43 @@ export const BlotterSettleModal: React.FC<BlotterSettleModalProps> = ({
             />
           </div>
 
-          <div className="flex items-center justify-end gap-2 pt-3 border-t border-zinc-200">
-            <button
-              type="button"
-              onClick={onClose}
-              disabled={isSubmitting}
-              className="px-3.5 py-1.5 text-xs font-mono font-medium text-zinc-800 hover:bg-zinc-100 rounded-none border border-zinc-300 uppercase tracking-wider transition-colors"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={isSubmitting}
-              className="inline-flex items-center gap-1.5 px-4 py-1.5 text-xs font-mono font-semibold text-white bg-emerald-700 hover:bg-emerald-800 rounded-none uppercase tracking-wider transition-colors disabled:opacity-50"
-            >
-              {isSubmitting ? (
-                <>
-                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                  <span>Saving...</span>
-                </>
-              ) : (
-                <span>Save Changes</span>
+          <div className="flex items-center justify-between gap-2 pt-3 border-t border-zinc-200">
+            <div>
+              {onOpenPrint && (
+                <button
+                  type="button"
+                  onClick={() => onOpenPrint({ ...record, status, settlement_notes: settlementNotes })}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-mono font-medium text-zinc-900 bg-zinc-100 hover:bg-zinc-200 rounded-none border border-zinc-300 uppercase tracking-wider transition-colors"
+                >
+                  <Printer className="w-3.5 h-3.5" />
+                  <span>Print KP Form</span>
+                </button>
               )}
-            </button>
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={onClose}
+                disabled={isSubmitting}
+                className="px-3.5 py-1.5 text-xs font-mono font-medium text-zinc-800 hover:bg-zinc-100 rounded-none border border-zinc-300 uppercase tracking-wider transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={isSubmitting}
+                className="inline-flex items-center gap-1.5 px-4 py-1.5 text-xs font-mono font-semibold text-white bg-emerald-700 hover:bg-emerald-800 rounded-none uppercase tracking-wider transition-colors disabled:opacity-50"
+              >
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    <span>Saving...</span>
+                  </>
+                ) : (
+                  <span>Save Changes</span>
+                )}
+              </button>
+            </div>
           </div>
         </form>
       </div>

@@ -3,17 +3,22 @@ import { Outlet } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import Topbar from './Topbar';
 import { SystemInfoResponse } from '../../types/system';
+import { useSettings } from '../../context/SettingsContext';
 
 export const MainLayout: React.FC = () => {
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  const [barangayName, setBarangayName] = useState('Barangay Poblacion');
+  const { settings } = useSettings();
+  const [localBarangayName, setLocalBarangayName] = useState('');
 
   const handleSystemInfoLoaded = useCallback((info: SystemInfoResponse) => {
     if (info.settings?.barangay_name) {
-      setBarangayName(info.settings.barangay_name);
+      setLocalBarangayName(info.settings.barangay_name);
     }
   }, []);
+
+  const activeBarangayName = localBarangayName || settings.barangay_name || 'Barangay Poblacion';
+  const municipalityName = settings.municipality_name;
 
   return (
     <div className="h-full w-full overflow-hidden bg-[#F8F9FA] flex flex-col font-sans">
@@ -21,7 +26,8 @@ export const MainLayout: React.FC = () => {
         {/* Desktop Persistent Sidebar with Collapsible Rail */}
         <div className="hidden md:flex md:flex-shrink-0 h-full overflow-hidden">
           <Sidebar
-            barangayName={barangayName}
+            barangayName={activeBarangayName}
+            municipalityName={municipalityName}
             isCollapsed={sidebarCollapsed}
             onToggleCollapse={() => setSidebarCollapsed(!sidebarCollapsed)}
           />
@@ -38,7 +44,11 @@ export const MainLayout: React.FC = () => {
             />
             {/* Drawer */}
             <div className="relative flex-1 flex flex-col max-w-xs w-full bg-[#121214] z-50">
-              <Sidebar onClose={() => setMobileSidebarOpen(false)} barangayName={barangayName} />
+              <Sidebar
+                onClose={() => setMobileSidebarOpen(false)}
+                barangayName={activeBarangayName}
+                municipalityName={municipalityName}
+              />
             </div>
           </div>
         )}

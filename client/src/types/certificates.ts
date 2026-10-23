@@ -18,12 +18,34 @@ export interface BarangayOfficial {
   updated_at?: string;
 }
 
+export type PaperSize = 'short' | 'a4' | 'long';
+
+export type TemplateCategory = 'certificate' | 'blotter';
+
+export interface HeaderConfig {
+  showLeftSeal?: boolean;
+  showRightSeal?: boolean;
+  leftSealUrl?: string;
+  rightSealUrl?: string;
+  sealSizePx?: number;
+  headerAlign?: 'center' | 'left';
+  borderStyle?: 'double' | 'solid' | 'accent' | 'none';
+  subHeaderTitle?: string;
+  showControlNumberBox?: boolean;
+}
+
 export interface CertificateTemplate {
   id: number;
   template_code: string;
   template_name: string;
+  template_category?: TemplateCategory;
   title_header: string;
+  paper_size?: PaperSize;
+  header_html?: string;
+  header_config_json?: string;
   body_html: string;
+  footer_html?: string;
+  docx_filename?: string | null;
   show_officials_sidebar: number;
   default_fee: number;
   requires_blotter_check: number;
@@ -107,6 +129,10 @@ export interface PreviewIssuanceResponse {
   sidebar_officials: BarangayOfficial[];
   blotter_status: BlotterCheckResponse;
   default_fee: number;
+  paper_size?: PaperSize;
+  header_html?: string;
+  header_config_json?: string;
+  footer_html?: string;
 }
 
 export interface PrintableIssuancePayload {
@@ -116,6 +142,10 @@ export interface PrintableIssuancePayload {
   template_name: string;
   title_header: string;
   show_officials_sidebar: number;
+  paper_size?: PaperSize;
+  header_html?: string;
+  header_config_json?: string;
+  footer_html?: string;
 }
 
 export interface IssuanceQueryParams {
@@ -152,8 +182,30 @@ export interface SingleIssuanceResponse extends CertificateIssuance {
   template_code?: string;
   title_header?: string;
   show_officials_sidebar?: number;
+  paper_size?: PaperSize;
+  header_html?: string;
+  header_config_json?: string;
+  footer_html?: string;
   issued_by_name?: string;
   html?: string;
   sidebar_officials?: BarangayOfficial[];
   issuance?: CertificateIssuance;
+}
+
+export interface BlotterPrintPreviewResponse {
+  html: string;
+  header_html: string;
+  header_config_json: string;
+  footer_html: string;
+  title_header: string;
+  template_id: number;
+  template_code: string;
+  template_name: string;
+  paper_size: PaperSize;
+  show_officials_sidebar: number;
+  sidebar_officials: BarangayOfficial[];
+  case_number: string;
+  signatory_name: string;
+  signatory_position: string;
+  is_oic_signing: number;
 }

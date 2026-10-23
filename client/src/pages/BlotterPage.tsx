@@ -10,7 +10,8 @@ import {
   ChevronLeft,
   ChevronRight,
   Loader2,
-  FileText
+  FileText,
+  Printer
 } from 'lucide-react';
 import api from '../services/api';
 import { useAuth } from '../context/AuthContext';
@@ -18,6 +19,7 @@ import { BlotterRecord, BlotterStatus } from '../types/admin';
 import BlotterFormModal from '../components/blotter/BlotterFormModal';
 import BlotterSettleModal from '../components/blotter/BlotterSettleModal';
 import BlotterArchiveModal from '../components/blotter/BlotterArchiveModal';
+import BlotterPrintPreviewModal from '../components/blotter/BlotterPrintPreviewModal';
 
 export const BlotterPage: React.FC = () => {
   const { role } = useAuth();
@@ -39,6 +41,7 @@ export const BlotterPage: React.FC = () => {
   const [isFormModalOpen, setIsFormModalOpen] = useState(false);
   const [settleRecord, setSettleRecord] = useState<BlotterRecord | null>(null);
   const [archiveRecord, setArchiveRecord] = useState<BlotterRecord | null>(null);
+  const [printRecord, setPrintRecord] = useState<BlotterRecord | null>(null);
 
   const fetchBlotters = useCallback(async () => {
     setLoading(true);
@@ -244,6 +247,17 @@ export const BlotterPage: React.FC = () => {
                     </td>
                     <td className="px-3.5 py-2.5 text-right whitespace-nowrap space-x-1.5">
                       <button
+                        type="button"
+                        onClick={() => setPrintRecord(rec)}
+                        data-testid={`print-blotter-btn-${rec.id}`}
+                        className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-mono font-medium text-zinc-900 bg-white hover:bg-zinc-100 border border-zinc-300 rounded-none transition-colors"
+                        title="Print Blotter Extract or KP Form"
+                      >
+                        <Printer className="w-3 h-3" />
+                        <span>Print / KP Form</span>
+                      </button>
+
+                      <button
                         onClick={() => setSettleRecord(rec)}
                         className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-mono font-medium text-emerald-800 bg-white hover:bg-emerald-50 border border-emerald-300 rounded-none transition-colors"
                       >
@@ -317,6 +331,10 @@ export const BlotterPage: React.FC = () => {
         onClose={() => setSettleRecord(null)}
         onSuccess={() => fetchBlotters()}
         record={settleRecord}
+        onOpenPrint={(rec) => {
+          setSettleRecord(null);
+          setPrintRecord(rec);
+        }}
       />
 
       <BlotterArchiveModal
@@ -324,6 +342,12 @@ export const BlotterPage: React.FC = () => {
         onClose={() => setArchiveRecord(null)}
         onSuccess={() => fetchBlotters()}
         record={archiveRecord}
+      />
+
+      <BlotterPrintPreviewModal
+        isOpen={!!printRecord}
+        onClose={() => setPrintRecord(null)}
+        record={printRecord}
       />
     </div>
   );

@@ -19,7 +19,10 @@ import {
   PrintableIssuancePayload,
   IssuanceQueryParams,
   IssuanceListResponse,
-  SingleIssuanceResponse
+  SingleIssuanceResponse,
+  BlotterPrintPreviewResponse,
+  PaperSize,
+  TemplateCategory
 } from '../types/certificates';
 import {
   BlotterRecord,
@@ -148,6 +151,12 @@ class ApiClient {
   }
 
   // --- System Endpoints ---
+
+  public async getPublicMetadata(): Promise<{ barangay_name?: string; municipality_name?: string; province_name?: string; region_name?: string }> {
+    return this.request<{ barangay_name?: string; municipality_name?: string; province_name?: string; region_name?: string }>('/api/system/public-meta', {
+      method: 'GET'
+    });
+  }
 
   public async getSystemInfo(): Promise<SystemInfoResponse> {
     return this.request<SystemInfoResponse>('/api/system/info', {
@@ -365,7 +374,123 @@ class ApiClient {
     });
   }
 
+  private async downloadBinaryFile(endpoint: string, options: RequestInit, fallbackFilename: string): Promise<Blob> {
+    const headers = new Headers(options.headers || {});
+    if (!headers.has('Content-Type') && options.body && !(options.body instanceof FormData)) {
+      headers.set('Content-Type', 'application/json');
+    }
+    const token = this.getToken();
+    if (token && !headers.has('Authorization')) {
+      headers.set('Authorization', `Bearer ${token}`);
+    }
+
+    const res = await fetch(endpoint, {
+      ...options,
+      headers,
+      credentials: 'include'
+    });
+
+    if (!res.ok) {
+      let errorMessage = `HTTP ${res.status}: ${res.statusText}`;
+      try {
+        const errorData = await res.json();
+        if (errorData?.error) errorMessage = errorData.error;
+      } catch {
+        // Not JSON
+      }
+      throw new Error(errorMessage);
+    }
+
+    const blob = await res.blob();
+
+    if (typeof window !== 'undefined' && typeof document !== 'undefined') {
+      const url = window.URL?.createObjectURL ? window.URL.createObjectURL(blob) : '';
+      if (url) {
+        const a = document.createElement('a');
+        a.href = url;
+        const contentDisposition = res.headers.get('Content-Disposition');
+        let filename = fallbackFilename;
+        if (contentDisposition) {
+          const match = contentDisposition.match(/filename="?([^"]+)"?/);
+          if (match && match[1]) {
+            filename = match[1];
+          }
+        }
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        if (window.URL?.revokeObjectURL) {
+          window.URL.revokeObjectURL(url);
+        }
+      }
+    }
+
+    return blob;
+  }
+
+  public async exportPreviewIssuanceDocx(
+    payload: PreviewIssuanceInput & { paper_size?: PaperSize }
+  ): Promise<Blob> {
+    return this.downloadBinaryFile(
+      '/api/issuances/export-docx',
+      {
+        method: 'POST',
+        body: JSON.stringify(payload)
+      },
+      'certificate_preview.docx'
+    );
+  }
+
+  public async exportIssuanceDocxById(id: number, paperSize?: PaperSize): Promise<Blob> {
+    const query = paperSize ? `?paper_size=${encodeURIComponent(paperSize)}` : '';
+    return this.downloadBinaryFile(
+      `/api/issuances/${id}/export-docx${query}`,
+      { method: 'GET' },
+      `certificate_${id}.docx`
+    );
+  }
+
   // --- Blotter Endpoints ---
+
+  public async previewBlotterPrint(
+    id: number,
+    payload: {
+      template_id?: number;
+      template_code?: string;
+      signatory_official_id?: number;
+      is_oic_signing?: boolean | number;
+      hearing_date?: string;
+      paper_size?: PaperSize;
+      log_print?: boolean;
+    } = {}
+  ): Promise<BlotterPrintPreviewResponse> {
+    return this.request<BlotterPrintPreviewResponse>(`/api/blotter/${id}/print-preview`, {
+      method: 'POST',
+      body: JSON.stringify(payload)
+    });
+  }
+
+  public async exportBlotterDocx(
+    id: number,
+    payload: {
+      template_id?: number;
+      template_code?: string;
+      signatory_official_id?: number;
+      is_oic_signing?: boolean | number;
+      hearing_date?: string;
+      paper_size?: PaperSize;
+    } = {}
+  ): Promise<Blob> {
+    return this.downloadBinaryFile(
+      `/api/blotter/${id}/export-docx`,
+      {
+        method: 'POST',
+        body: JSON.stringify(payload)
+      },
+      `blotter_${id}.docx`
+    );
+  }
 
   public async getBlotters(params: BlotterQueryFilter = {}): Promise<BlotterListResponse> {
     const searchParams = new URLSearchParams();
@@ -435,8 +560,13 @@ class ApiClient {
   public async createTemplate(payload: {
     template_code: string;
     template_name: string;
+    template_category?: TemplateCategory;
     title_header: string;
+    paper_size?: PaperSize;
+    header_html?: string;
+    header_config_json?: string;
     body_html: string;
+    footer_html?: string;
     show_officials_sidebar?: number;
     default_fee?: number;
     requires_blotter_check?: number;
@@ -451,6 +581,83 @@ class ApiClient {
     return this.request<CertificateTemplate>(`/api/templates/${id}`, {
       method: 'PUT',
       body: JSON.stringify(payload)
+    });
+  }
+
+  public async syncHeaderAcrossTemplates(payload: {
+    header_html: string;
+    header_config_json?: string;
+    category?: TemplateCategory;
+  }): Promise<{ message: string; updatedCount: number }> {
+    return this.request<{ message: string; updatedCount: number }>('/api/templates/sync-header', {
+      method: 'POST',
+      body: JSON.stringify(payload)
+    });
+  }
+
+  public async exportTemplateDocx(id: number | string, paperSize?: PaperSize): Promise<Blob> {
+    const query = paperSize ? `?paper_size=${encodeURIComponent(paperSize)}` : '';
+    return this.downloadBinaryFile(
+      `/api/templates/${id}/export-docx${query}`,
+      { method: 'GET' },
+      `template_${id}.docx`
+    );
+  }
+
+  public async importTemplateDocx(
+    id: number | string,
+    file: File
+  ): Promise<{
+    template: CertificateTemplate;
+    detectedPlaceholders: string[];
+    importedFromDocx: boolean;
+  }> {
+    const formData = new FormData();
+    formData.append('file', file);
+    return this.request<{
+      template: CertificateTemplate;
+      detectedPlaceholders: string[];
+      importedFromDocx: boolean;
+    }>(`/api/templates/${id}/import-docx`, {
+      method: 'POST',
+      body: formData
+    });
+  }
+
+  public async parseDocxPreview(file: File): Promise<{
+    headerHtml: string;
+    bodyHtml: string;
+    titleHeader: string | null;
+    paperSize: PaperSize;
+    detectedPlaceholders: string[];
+  }> {
+    const formData = new FormData();
+    formData.append('file', file);
+    return this.request<{
+      headerHtml: string;
+      bodyHtml: string;
+      titleHeader: string | null;
+      paperSize: PaperSize;
+      detectedPlaceholders: string[];
+    }>('/api/templates/parse-docx', {
+      method: 'POST',
+      body: formData
+    });
+  }
+
+  public async reloadTemplateDocxFromDisk(
+    id: number | string
+  ): Promise<{
+    template: CertificateTemplate;
+    detectedPlaceholders: string[];
+    reloadedFromDisk: boolean;
+  }> {
+    return this.request<{
+      template: CertificateTemplate;
+      detectedPlaceholders: string[];
+      reloadedFromDisk: boolean;
+    }>(`/api/templates/${id}/reload-docx`, {
+      method: 'POST'
     });
   }
 

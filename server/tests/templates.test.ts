@@ -518,4 +518,73 @@ describe('Certificate Templates & Template Engine Test Suite (templates.test.ts)
       expect(afterIdenticalAuditCount).toBe(initialAuditCount);
     });
   });
+
+  describe('6. Coupon Bond Paper Size, Header Structure & MS Word (.docx) Round-Trip Integration', () => {
+    it('updates paper_size (short/a4/long) and custom header_html on a template and syncs header across templates', async () => {
+      const template = db.prepare(`SELECT * FROM certificate_templates WHERE template_code = 'BRGY_CLEARANCE'`).get() as CertificateTemplate;
+      expect(template).toBeDefined();
+
+      const customHeader = '<div style="text-align: center;"><p>REPUBLIC OF THE PHILIPPINES</p><h2>BARANGAY {{barangay_name}}</h2></div>';
+      const customConfig = JSON.stringify({ borderStyle: 'double', headerAlign: 'center', showLeftSeal: true, showRightSeal: true });
+
+      const updateRes = await request(app)
+        .put(`/api/templates/${template.id}`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({
+          paper_size: 'long',
+          header_html: customHeader,
+          header_config_json: customConfig
+        });
+
+      expect(updateRes.status).toBe(200);
+      expect(updateRes.body.paper_size).toBe('long');
+      expect(updateRes.body.header_html).toBe(customHeader);
+
+      // Sync header across all certificate templates
+      const syncRes = await request(app)
+        .post('/api/templates/sync-header')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({
+          header_html: customHeader,
+          header_config_json: customConfig,
+          category: 'certificate'
+        });
+
+      expect(syncRes.status).toBe(200);
+      expect(syncRes.body.updatedCount).toBeGreaterThanOrEqual(4);
+    });
+
+    it('exports a template as MS Word (.docx) and re-imports it while preserving {{placeholder}} tags and paper size', async () => {
+      const template = db.prepare(`SELECT * FROM certificate_templates WHERE template_code = 'BRGY_CLEARANCE'`).get() as CertificateTemplate;
+      expect(template).toBeDefined();
+
+      const exportRes = await request(app)
+        .get(`/api/templates/${template.id}/export-docx?paper_size=long`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .buffer(true)
+        .parse((res, callback) => {
+          const chunks: Buffer[] = [];
+          res.on('data', (chunk) => chunks.push(Buffer.from(chunk)));
+          res.on('end', () => callback(null, Buffer.concat(chunks)));
+        });
+
+      expect(exportRes.status).toBe(200);
+      expect(exportRes.headers['content-type']).toContain('application/vnd.openxmlformats-officedocument.wordprocessingml.document');
+      const docxBuffer = exportRes.body as Buffer;
+      expect(Buffer.isBuffer(docxBuffer)).toBe(true);
+      expect(docxBuffer.subarray(0, 2).toString('utf8')).toBe('PK');
+
+      // Re-import the exported .docx buffer via POST /api/templates/:id/import-docx
+      const importRes = await request(app)
+        .post(`/api/templates/${template.id}/import-docx`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .attach('file', docxBuffer, 'BRGY_CLEARANCE.docx');
+
+      expect(importRes.status).toBe(200);
+      expect(importRes.body.importedFromDocx).toBe(true);
+      expect(importRes.body.template.paper_size).toBe('long');
+      expect(importRes.body.detectedPlaceholders).toContain('{{full_name}}');
+      expect(importRes.body.detectedPlaceholders).toContain('{{purok}}');
+    });
+  });
 });

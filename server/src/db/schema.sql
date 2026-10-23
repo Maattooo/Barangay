@@ -121,11 +121,39 @@ CREATE TABLE IF NOT EXISTS certificate_templates (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     template_code TEXT NOT NULL UNIQUE,       -- e.g., "BRGY_CLEARANCE", "INDIGENCY", "RESIDENCY"
     template_name TEXT NOT NULL,              -- e.g., "Barangay Clearance"
+    template_category TEXT NOT NULL DEFAULT 'certificate' CHECK(template_category IN ('certificate', 'blotter')),
+    paper_size TEXT NOT NULL DEFAULT 'a4' CHECK(paper_size IN ('short', 'a4', 'long')),
+    header_html TEXT NOT NULL DEFAULT '',     -- Customizable rich HTML header structure
+    header_config_json TEXT NOT NULL DEFAULT '{}', -- Header layout config (seals, borders, alignment, subtitle)
     title_header TEXT NOT NULL,               -- e.g., "BARANGAY CLEARANCE" or "CERTIFICATION"
     body_html TEXT NOT NULL,                  -- Rich HTML containing {{placeholders}}
+    footer_html TEXT NOT NULL DEFAULT '',     -- Optional custom footer / signatory layout
+    docx_filename TEXT NOT NULL DEFAULT '',   -- Associated MS Word .docx filename in data/templates/word/
     show_officials_sidebar INTEGER NOT NULL DEFAULT 1, -- 1 = Left column shows Barangay Council, 0 = Full width text
     default_fee REAL NOT NULL DEFAULT 50.00,
     requires_blotter_check INTEGER NOT NULL DEFAULT 1,
+    is_active INTEGER NOT NULL DEFAULT 1,
+    updated_by INTEGER,
+    updated_at TEXT NOT NULL DEFAULT (datetime('now', 'localtime')),
+    FOREIGN KEY (updated_by) REFERENCES users(id)
+);
+
+-- 5b. BLOTTER / KP TEMPLATES TABLE (Official Printable Blotter & Katarungang Pambarangay Forms)
+CREATE TABLE IF NOT EXISTS blotter_templates (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    template_code TEXT NOT NULL UNIQUE,       -- e.g., "BLOTTER_EXTRACT", "KP_SUMMONS", "KP_SETTLEMENT", "KP_CFA"
+    template_name TEXT NOT NULL,              -- e.g., "Blotter Incident Report"
+    template_category TEXT NOT NULL DEFAULT 'blotter' CHECK(template_category IN ('certificate', 'blotter')),
+    paper_size TEXT NOT NULL DEFAULT 'a4' CHECK(paper_size IN ('short', 'a4', 'long')),
+    header_html TEXT NOT NULL DEFAULT '',
+    header_config_json TEXT NOT NULL DEFAULT '{}',
+    title_header TEXT NOT NULL,
+    body_html TEXT NOT NULL,
+    footer_html TEXT NOT NULL DEFAULT '',
+    docx_filename TEXT NOT NULL DEFAULT '',
+    show_officials_sidebar INTEGER NOT NULL DEFAULT 0,
+    default_fee REAL NOT NULL DEFAULT 0.00,
+    requires_blotter_check INTEGER NOT NULL DEFAULT 0,
     is_active INTEGER NOT NULL DEFAULT 1,
     updated_by INTEGER,
     updated_at TEXT NOT NULL DEFAULT (datetime('now', 'localtime')),

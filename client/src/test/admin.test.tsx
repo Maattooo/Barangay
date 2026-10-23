@@ -1173,4 +1173,145 @@ describe('Phase 12 — Frontend Admin Suite: Templates, Officials, Blotter & Aud
       u2();
     });
   });
+
+  // 9. Blotter Printing & Template Studio Enhancements (Coupon Sizes, Header Studio & .docx Feed)
+  describe('9. Blotter Printing & Template Studio Enhancements', () => {
+    it('Opens BlotterPrintPreviewModal from BlotterPage, switches KP form & Coupon Size (Short/A4/Long), and prints', async () => {
+      window.print = vi.fn();
+
+      vi.spyOn(globalThis, 'fetch').mockImplementation(async (input: RequestInfo | URL) => {
+        const url = input.toString();
+        if (url.includes('/api/auth/me')) {
+          return new Response(JSON.stringify({ user: mockUserWithRole('Lupon') }), { status: 200 });
+        }
+        if (url.includes('/api/blotter/101/print-preview')) {
+          return new Response(
+            JSON.stringify({
+              html: '<p>Summons for Juan Dela Cruz regarding Physical Injury</p>',
+              header_html: '<p>OFFICE OF THE LUPONG TAGAPAMAYAPA</p>',
+              header_config_json: '{}',
+              footer_html: '',
+              title_header: 'SUMMONS (KP FORM NO. 9)',
+              template_id: 102,
+              template_code: 'KP_SUMMONS',
+              template_name: 'KP Form No. 9 - Summons',
+              paper_size: 'long',
+              show_officials_sidebar: 0,
+              sidebar_officials: mockOfficials,
+              case_number: 'BLT-2026-001',
+              signatory_name: 'HON. JUAN DELA CRUZ',
+              signatory_position: 'Punong Barangay',
+              is_oic_signing: 0
+            }),
+            { status: 200 }
+          );
+        }
+        if (url.includes('/api/blotter')) {
+          return new Response(
+            JSON.stringify({
+              data: mockBlotterRecords,
+              pagination: { total: mockBlotterRecords.length, page: 1, limit: 10, totalPages: 1 }
+            }),
+            { status: 200 }
+          );
+        }
+        if (url.includes('/api/officials')) {
+          return new Response(JSON.stringify(mockOfficials), { status: 200 });
+        }
+        if (url.includes('/api/templates')) {
+          return new Response(JSON.stringify([]), { status: 200 });
+        }
+        return new Response(JSON.stringify({}), { status: 200 });
+      });
+
+      render(
+        <MemoryRouter initialEntries={['/blotter']}>
+          <AuthProvider>
+            <BlotterPage />
+          </AuthProvider>
+        </MemoryRouter>
+      );
+
+      await waitFor(() => {
+        expect(screen.getByTestId('print-blotter-btn-101')).toBeInTheDocument();
+      });
+
+      fireEvent.click(screen.getByTestId('print-blotter-btn-101'));
+
+      const printModal = await screen.findByTestId('blotter-print-preview-modal');
+      expect(printModal).toBeInTheDocument();
+
+      // Switch coupon size to Long (8.5x13")
+      fireEvent.click(screen.getByTestId('blotter-paper-size-btn-long'));
+      expect(screen.getByTestId('printable-certificate-area')).toHaveAttribute('data-paper-size', 'long');
+
+      // Click Print Blotter / KP Form
+      fireEvent.click(screen.getByTestId('blotter-print-button'));
+      expect(window.print).toHaveBeenCalled();
+    });
+
+    it('Supports Coupon Bond Size selection and Apply Header to All Templates in TemplatesPage', async () => {
+      let syncedPayload: any = null;
+      let savedPayload: any = null;
+
+      vi.spyOn(globalThis, 'fetch').mockImplementation(async (input: RequestInfo | URL, init?: RequestInit) => {
+        const url = input.toString();
+        const method = init?.method || 'GET';
+
+        if (url.includes('/api/auth/me')) {
+          return new Response(JSON.stringify({ user: mockUserWithRole('Admin') }), { status: 200 });
+        }
+        if (url.includes('/api/templates/sync-header') && method === 'POST') {
+          syncedPayload = JSON.parse(init?.body as string);
+          return new Response(
+            JSON.stringify({ message: 'Synced', updatedCount: 8 }),
+            { status: 200 }
+          );
+        }
+        if (url.includes('/api/templates/1') && method === 'PUT') {
+          savedPayload = JSON.parse(init?.body as string);
+          return new Response(
+            JSON.stringify({ ...mockTemplates[0], ...savedPayload }),
+            { status: 200 }
+          );
+        }
+        if (url.includes('/api/templates')) {
+          return new Response(JSON.stringify(mockTemplates), { status: 200 });
+        }
+        return new Response(JSON.stringify({}), { status: 200 });
+      });
+
+      render(
+        <MemoryRouter initialEntries={['/templates']}>
+          <AuthProvider>
+            <TemplatesPage />
+          </AuthProvider>
+        </MemoryRouter>
+      );
+
+      await waitFor(() => {
+        expect(screen.getByTestId('template-paper-size-select')).toBeInTheDocument();
+      });
+
+      // Change coupon bond size to Long
+      fireEvent.change(screen.getByTestId('template-paper-size-select'), {
+        target: { value: 'long' }
+      });
+
+      // Click Apply Header to All Templates
+      fireEvent.click(screen.getByTestId('sync-header-all-btn'));
+      await waitFor(() => {
+        expect(syncedPayload).not.toBeNull();
+        expect(syncedPayload.header_html).toContain('Republic of the Philippines');
+      });
+
+      // Save template and verify paper_size and header_html are sent
+      fireEvent.click(screen.getByRole('button', { name: /save template/i }));
+      await waitFor(() => {
+        expect(savedPayload).not.toBeNull();
+        expect(savedPayload.paper_size).toBe('long');
+        expect(savedPayload.header_html).toBeDefined();
+      });
+    });
+  });
 });

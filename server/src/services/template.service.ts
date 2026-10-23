@@ -284,9 +284,40 @@ export function interpolateTemplate(
     ? 'Sangguniang Barangay Member / OIC'
     : (signatoryPosition || 'Punong Barangay');
 
-  // Mapping of all 20 standard placeholder keys in lowercase
+  // 21. Additional Resident, Barangay, Cedula & Blotter/KP Placeholders
+  const firstName = (resident?.first_name || '').trim().toUpperCase();
+  const middleName = (resident?.middle_name || '').trim().toUpperCase();
+  const lastName = (resident?.last_name || '').trim().toUpperCase();
+  const suffix = (resident?.suffix || '').trim().toUpperCase();
+  const dateToday = `${MONTH_NAMES[refDate.getMonth()]} ${refDate.getDate()}, ${refDate.getFullYear()}`;
+  const regionName = (settings.region_name || '').trim();
+  const contactEmail = (settings.contact_email || '').trim();
+
+  const ctcNumber = (context.ctc_number || '').trim();
+  const ctcDateIssued = formatBirthdate(context.ctc_date_issued) || (context.ctc_date_issued || '').trim();
+  const ctcPlaceIssued = (context.ctc_place_issued || '').trim();
+
+  const blotter = context.blotter || null;
+  const caseNumber = (blotter?.case_number || context.case_number || '').trim();
+  const complainantName = (blotter?.complainant_name || context.complainant_name || '').trim().toUpperCase();
+  const respondentName = (blotter?.respondent_name || context.respondent_name || '').trim().toUpperCase();
+  const incidentType = (blotter?.incident_type || context.incident_type || '').trim();
+  const incidentLocation = (blotter?.incident_location || context.incident_location || brgy || '').trim();
+  const incidentDetails = (blotter?.incident_details || context.incident_details || '').trim();
+  const dateIncident = formatBirthdate(blotter?.date_incident || context.date_incident) || (blotter?.date_incident || context.date_incident || '').trim();
+  const rawDateRecorded = blotter?.date_recorded || context.date_recorded || '';
+  const dateRecorded = formatBirthdate(rawDateRecorded.split(' ')[0]) || rawDateRecorded;
+  const blotterStatus = (blotter?.status || context.status || '').trim();
+  const settlementNotes = (blotter?.settlement_notes || context.settlement_notes || 'No settlement or resolution notes recorded yet.').trim();
+  const hearingDate = (context.hearing_date || dateToday).trim();
+
+  // Mapping of all standard + extended placeholder keys in lowercase
   const replacements: Record<string, string> = {
     full_name: fullName,
+    first_name: firstName,
+    middle_name: middleName,
+    last_name: lastName,
+    suffix,
     age,
     birthdate: birthdateFormatted,
     sex,
@@ -294,18 +325,39 @@ export function interpolateTemplate(
     pronoun_he_she: pronounHeShe,
     pronoun_his_her: pronounHisHer,
     purok,
+    street,
     address,
     purpose,
-    control_number: controlNumber,
+    control_number: controlNumber || caseNumber,
     or_number: orNumber,
     amount_paid: amountPaidStr,
+    ctc_number: ctcNumber,
+    ctc_date_issued: ctcDateIssued,
+    ctc_place_issued: ctcPlaceIssued,
     day_ordinal: dayOrdinal,
     month_year: monthYear,
+    date_today: dateToday,
+    barangay_name: brgy,
+    municipality_name: muni,
+    province_name: prov,
+    region_name: regionName,
+    contact_email: contactEmail,
     punong_barangay: punongBarangayName,
     barangay_secretary: secretaryName,
     barangay_treasurer: treasurerName,
     signatory_name: signatoryName,
-    signatory_title: signatoryTitle
+    signatory_title: signatoryTitle,
+    case_number: caseNumber,
+    complainant_name: complainantName,
+    respondent_name: respondentName,
+    incident_type: incidentType,
+    incident_location: incidentLocation,
+    incident_details: incidentDetails,
+    date_incident: dateIncident,
+    date_recorded: dateRecorded,
+    status: blotterStatus,
+    settlement_notes: settlementNotes,
+    hearing_date: hearingDate
   };
 
   // Replace case-insensitively without throwing on missing values
@@ -317,3 +369,16 @@ export function interpolateTemplate(
     return match;
   });
 }
+
+export const DEFAULT_CERTIFICATE_HEADER_HTML = `<p style="text-align: center;">Republic of the Philippines</p>
+<p style="text-align: center;">Province of {{province_name}}</p>
+<p style="text-align: center;">Municipality of {{municipality_name}}</p>
+<p style="text-align: center;"><strong>BARANGAY {{barangay_name}}</strong></p>
+<p style="text-align: center;"><em>Office of the Punong Barangay</em></p>`;
+
+export const DEFAULT_BLOTTER_HEADER_HTML = `<p style="text-align: center;">Republic of the Philippines</p>
+<p style="text-align: center;">Province of {{province_name}}</p>
+<p style="text-align: center;">Municipality of {{municipality_name}}</p>
+<p style="text-align: center;"><strong>BARANGAY {{barangay_name}}</strong></p>
+<p style="text-align: center;"><em>Office of the Lupong Tagapamayapa</em></p>`;
+

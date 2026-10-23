@@ -4,6 +4,8 @@ import {
   createIssuance,
   getIssuances,
   getIssuanceById,
+  exportIssuanceDocxById,
+  exportPreviewIssuanceDocx,
   IssuanceError
 } from '../services/issuance.service';
 import { PreviewIssuanceInput, CreateIssuanceInput, IssuanceQueryParams } from '../types/issuances';
@@ -208,5 +210,98 @@ export async function getIssuanceByIdController(req: Request, res: Response): Pr
   } catch (error: any) {
     console.error('Error fetching issuance by id:', error);
     res.status(500).json({ error: 'Internal server error fetching certificate issuance' });
+  }
+}
+
+/**
+ * POST /api/issuances/export-docx
+ * Generates and downloads a filled MS Word (.docx) document for a previewed certificate.
+ */
+export async function exportPreviewIssuanceDocxController(req: Request, res: Response): Promise<void> {
+  try {
+    const {
+      resident_id,
+      template_id,
+      purpose,
+      or_number,
+      amount_paid,
+      ctc_number,
+      ctc_date_issued,
+      ctc_place_issued,
+      signatory_official_id,
+      is_oic_signing,
+      paper_size
+    } = req.body || {};
+
+    if (!resident_id || isNaN(Number(resident_id))) {
+      res.status(400).json({ error: 'Valid resident_id is required' });
+      return;
+    }
+    if (!template_id || isNaN(Number(template_id))) {
+      res.status(400).json({ error: 'Valid template_id is required' });
+      return;
+    }
+    if (!signatory_official_id || isNaN(Number(signatory_official_id))) {
+      res.status(400).json({ error: 'Valid signatory_official_id is required' });
+      return;
+    }
+
+    const result = exportPreviewIssuanceDocx({
+      resident_id: Number(resident_id),
+      template_id: Number(template_id),
+      purpose: purpose !== undefined ? String(purpose) : '',
+      or_number: or_number !== undefined ? String(or_number) : undefined,
+      amount_paid: amount_paid !== undefined ? Number(amount_paid) : undefined,
+      ctc_number: ctc_number !== undefined ? String(ctc_number) : undefined,
+      ctc_date_issued: ctc_date_issued !== undefined ? String(ctc_date_issued) : undefined,
+      ctc_place_issued: ctc_place_issued !== undefined ? String(ctc_place_issued) : undefined,
+      signatory_official_id: Number(signatory_official_id),
+      is_oic_signing,
+      paper_size: paper_size === 'short' || paper_size === 'a4' || paper_size === 'long' ? paper_size : undefined
+    });
+
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
+    res.setHeader('Content-Disposition', `attachment; filename="${result.filename}"`);
+    res.status(200).send(result.buffer);
+  } catch (error: any) {
+    if (error instanceof IssuanceError) {
+      res.status(error.statusCode).json({ error: error.message });
+      return;
+    }
+    console.error('Error exporting preview issuance docx:', error);
+    res.status(500).json({ error: 'Internal server error exporting certificate .docx' });
+  }
+}
+
+/**
+ * GET /api/issuances/:id/export-docx
+ * Generates and downloads a filled MS Word (.docx) document for a saved certificate issuance.
+ */
+export async function exportIssuanceDocxByIdController(req: Request, res: Response): Promise<void> {
+  try {
+    const id = parseInt(req.params.id, 10);
+    if (isNaN(id) || id <= 0) {
+      res.status(400).json({ error: 'Invalid issuance ID' });
+      return;
+    }
+
+    const paperSizeQuery = req.query.paper_size as string | undefined;
+    const paperSizeOverride =
+      paperSizeQuery === 'short' || paperSizeQuery === 'a4' || paperSizeQuery === 'long'
+        ? paperSizeQuery
+        : undefined;
+
+    const result = exportIssuanceDocxById(id, paperSizeOverride);
+    if (!result) {
+      res.status(404).json({ error: 'Certificate issuance not found' });
+      return;
+    }
+
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
+    res.setHeader('Content-Disposition', `attachment; filename="${result.filename}"`);
+    res.status(200).send(result.buffer);
+  } catch (error: any) {
+    console.error('Error exporting issuance docx by id:', error);
+    res.status(500).json({ error: 'Internal server error exporting certificate .docx' });
   }
 }

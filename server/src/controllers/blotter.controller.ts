@@ -9,6 +9,11 @@ import {
   checkResidentBlotter
 } from '../services/blotter.service';
 import { BLOTTER_STATUSES, BlotterStatus } from '../types/blotter';
+import { CertificateTemplate } from '../types/templates';
+import { BarangayOfficial } from '../types/officials';
+import { interpolateTemplate, getOfficialsSidebarData, DEFAULT_BLOTTER_HEADER_HTML } from '../services/template.service';
+import { generateDocxBuffer } from '../services/docx.service';
+import { logAuditEvent } from '../services/audit.service';
 
 /**
  * GET /api/blotter
@@ -319,5 +324,288 @@ export async function checkResidentBlotterController(req: Request, res: Response
   } catch (error: any) {
     console.error('Error performing blotter gatekeeper check:', error);
     res.status(500).json({ error: 'Internal server error performing blotter gatekeeper check' });
+  }
+}
+
+/**
+ * Resolves the appropriate Blotter/KP template from blotter_templates or certificate_templates.
+ */
+function resolveBlotterTemplate(templateId?: number, templateCode?: string, status?: string): CertificateTemplate | undefined {
+  if (templateId && !isNaN(Number(templateId))) {
+    const fromBlotter = db.prepare('SELECT * FROM blotter_templates WHERE id = ?').get(Number(templateId)) as CertificateTemplate | undefined;
+    if (fromBlotter) return fromBlotter;
+    const fromCert = db.prepare('SELECT * FROM certificate_templates WHERE id = ?').get(Number(templateId)) as CertificateTemplate | undefined;
+    if (fromCert) return fromCert;
+  }
+
+  const targetCode = templateCode || (
+    status === 'Settled'
+      ? 'KP_SETTLEMENT'
+      : status === 'CFA Issued' || status === 'Escalated to Police/Court'
+      ? 'KP_CFA'
+      : status === 'Under Mediation'
+      ? 'KP_SUMMONS'
+      : 'BLOTTER_EXTRACT'
+  );
+
+  const byCode = db.prepare('SELECT * FROM blotter_templates WHERE template_code = ?').get(targetCode) as CertificateTemplate | undefined;
+  if (byCode) return byCode;
+
+  const byCodeCert = db.prepare('SELECT * FROM certificate_templates WHERE template_code = ?').get(targetCode) as CertificateTemplate | undefined;
+  if (byCodeCert) return byCodeCert;
+
+  return db.prepare('SELECT * FROM blotter_templates ORDER BY id ASC LIMIT 1').get() as CertificateTemplate | undefined;
+}
+
+/**
+ * POST /api/blotter/:id/print-preview
+ * Renders an interpolated Blotter / KP form for printing or previewing.
+ * Accessible to Admin and Lupon.
+ */
+export async function previewBlotterPrintController(req: Request, res: Response): Promise<void> {
+  try {
+    const id = parseInt(req.params.id, 10);
+    if (isNaN(id) || id <= 0) {
+      res.status(400).json({ error: 'Invalid blotter ID' });
+      return;
+    }
+
+    const record = getBlotterById(id);
+    if (!record) {
+      res.status(404).json({ error: 'Blotter record not found' });
+      return;
+    }
+
+    const {
+      template_id,
+      template_code,
+      signatory_official_id,
+      is_oic_signing,
+      hearing_date,
+      paper_size,
+      log_print
+    } = req.body || {};
+
+    const template = resolveBlotterTemplate(
+      template_id ? Number(template_id) : undefined,
+      typeof template_code === 'string' ? template_code : undefined,
+      record.status
+    );
+
+    if (!template) {
+      res.status(404).json({ error: 'Blotter template not found' });
+      return;
+    }
+
+    let signatory: BarangayOfficial | undefined;
+    if (signatory_official_id && !isNaN(Number(signatory_official_id))) {
+      signatory = db.prepare('SELECT * FROM barangay_officials WHERE id = ?').get(Number(signatory_official_id)) as BarangayOfficial | undefined;
+    }
+    if (!signatory) {
+      signatory = db.prepare("SELECT * FROM barangay_officials WHERE is_active = 1 ORDER BY CASE WHEN position = 'Punong Barangay' THEN 0 ELSE 1 END, rank_order ASC LIMIT 1").get() as BarangayOfficial | undefined;
+    }
+
+    const isOic = Boolean(
+      is_oic_signing === true ||
+      is_oic_signing === 1 ||
+      String(is_oic_signing).toLowerCase() === 'true' ||
+      String(is_oic_signing) === '1'
+    );
+
+    const interpContext = {
+      control_number: record.case_number,
+      case_number: record.case_number,
+      complainant_name: record.complainant_name,
+      respondent_name: record.respondent_name,
+      incident_type: record.incident_type,
+      incident_location: record.incident_location || 'Barangay Jurisdiction',
+      incident_details: record.incident_details,
+      date_incident: record.date_incident,
+      date_recorded: record.date_recorded,
+      status: record.status,
+      settlement_notes: record.settlement_notes || 'Pending formal settlement terms.',
+      hearing_date: hearing_date ? String(hearing_date).trim() : undefined,
+      signatory_official_id: signatory?.id,
+      signatory_name: signatory?.full_name || 'PUNONG BARANGAY',
+      signatory_position: signatory?.position || 'Punong Barangay',
+      is_oic_signing: isOic ? 1 : 0,
+      transaction_date: new Date()
+    };
+
+    const html = interpolateTemplate(template.body_html || '', interpContext);
+    const rawHeader = template.header_html || DEFAULT_BLOTTER_HEADER_HTML;
+    const header_html = interpolateTemplate(rawHeader, interpContext);
+    const footer_html = interpolateTemplate(template.footer_html || '', interpContext);
+    const sidebar_officials = getOfficialsSidebarData();
+
+    const resolvedPaperSize =
+      paper_size === 'short' || paper_size === 'a4' || paper_size === 'long'
+        ? paper_size
+        : (template.paper_size as 'short' | 'a4' | 'long') || 'short';
+
+    if (log_print && req.user) {
+      logAuditEvent({
+        userId: req.user.id,
+        username: req.user.username,
+        userRole: req.user.role,
+        action: 'PRINT_CERTIFICATE',
+        entityType: 'blotter',
+        entityId: record.id,
+        summaryText: `Printed ${template.template_name} (${record.case_number})`,
+        newData: {
+          case_number: record.case_number,
+          template_code: template.template_code,
+          template_name: template.template_name,
+          paper_size: resolvedPaperSize
+        },
+        clientIp: req.clientIp
+      });
+    }
+
+    res.status(200).json({
+      html,
+      header_html,
+      header_config_json: template.header_config_json || '{}',
+      footer_html,
+      title_header: template.title_header,
+      template_id: template.id,
+      template_code: template.template_code,
+      template_name: template.template_name,
+      paper_size: resolvedPaperSize,
+      show_officials_sidebar: template.show_officials_sidebar,
+      sidebar_officials,
+      case_number: record.case_number,
+      signatory_name: signatory?.full_name || 'PUNONG BARANGAY',
+      signatory_position: signatory?.position || 'Punong Barangay',
+      is_oic_signing: isOic ? 1 : 0,
+      blotter: record
+    });
+  } catch (error: any) {
+    console.error('Error generating blotter print preview:', error);
+    res.status(500).json({ error: 'Internal server error generating blotter print preview' });
+  }
+}
+
+/**
+ * POST /api/blotter/:id/export-docx
+ * Generates and downloads a filled MS Word (.docx) document for a Blotter / KP case.
+ * Accessible to Admin and Lupon.
+ */
+export async function exportBlotterDocxController(req: Request, res: Response): Promise<void> {
+  try {
+    const id = parseInt(req.params.id, 10);
+    if (isNaN(id) || id <= 0) {
+      res.status(400).json({ error: 'Invalid blotter ID' });
+      return;
+    }
+
+    const record = getBlotterById(id);
+    if (!record) {
+      res.status(404).json({ error: 'Blotter record not found' });
+      return;
+    }
+
+    const {
+      template_id,
+      template_code,
+      signatory_official_id,
+      is_oic_signing,
+      hearing_date,
+      paper_size
+    } = req.body || {};
+
+    const template = resolveBlotterTemplate(
+      template_id ? Number(template_id) : undefined,
+      typeof template_code === 'string' ? template_code : undefined,
+      record.status
+    );
+
+    if (!template) {
+      res.status(404).json({ error: 'Blotter template not found' });
+      return;
+    }
+
+    let signatory: BarangayOfficial | undefined;
+    if (signatory_official_id && !isNaN(Number(signatory_official_id))) {
+      signatory = db.prepare('SELECT * FROM barangay_officials WHERE id = ?').get(Number(signatory_official_id)) as BarangayOfficial | undefined;
+    }
+    if (!signatory) {
+      signatory = db.prepare("SELECT * FROM barangay_officials WHERE is_active = 1 ORDER BY CASE WHEN position = 'Punong Barangay' THEN 0 ELSE 1 END, rank_order ASC LIMIT 1").get() as BarangayOfficial | undefined;
+    }
+
+    const isOic = Boolean(
+      is_oic_signing === true ||
+      is_oic_signing === 1 ||
+      String(is_oic_signing).toLowerCase() === 'true' ||
+      String(is_oic_signing) === '1'
+    );
+
+    const interpContext = {
+      control_number: record.case_number,
+      case_number: record.case_number,
+      complainant_name: record.complainant_name,
+      respondent_name: record.respondent_name,
+      incident_type: record.incident_type,
+      incident_location: record.incident_location || 'Barangay Jurisdiction',
+      incident_details: record.incident_details,
+      date_incident: record.date_incident,
+      date_recorded: record.date_recorded,
+      status: record.status,
+      settlement_notes: record.settlement_notes || 'Pending formal settlement terms.',
+      hearing_date: hearing_date ? String(hearing_date).trim() : undefined,
+      signatory_official_id: signatory?.id,
+      signatory_name: signatory?.full_name || 'PUNONG BARANGAY',
+      signatory_position: signatory?.position || 'Punong Barangay',
+      is_oic_signing: isOic ? 1 : 0,
+      transaction_date: new Date()
+    };
+
+    const html = interpolateTemplate(template.body_html || '', interpContext);
+    const rawHeader = template.header_html || DEFAULT_BLOTTER_HEADER_HTML;
+    const header_html = interpolateTemplate(rawHeader, interpContext);
+    const footer_html = interpolateTemplate(template.footer_html || '', interpContext);
+
+    const resolvedPaperSize =
+      paper_size === 'short' || paper_size === 'a4' || paper_size === 'long'
+        ? paper_size
+        : (template.paper_size as 'short' | 'a4' | 'long') || 'short';
+
+    const buffer = generateDocxBuffer({
+      titleHeader: template.title_header,
+      headerHtml: header_html,
+      bodyHtml: html,
+      footerHtml: footer_html,
+      paperSize: resolvedPaperSize,
+      controlNumber: record.case_number
+    });
+
+    if (req.user) {
+      logAuditEvent({
+        userId: req.user.id,
+        username: req.user.username,
+        userRole: req.user.role,
+        action: 'PRINT_CERTIFICATE',
+        entityType: 'blotter',
+        entityId: record.id,
+        summaryText: `Exported ${template.template_name} (.docx) for ${record.case_number}`,
+        newData: {
+          case_number: record.case_number,
+          template_code: template.template_code,
+          paper_size: resolvedPaperSize
+        },
+        clientIp: req.clientIp
+      });
+    }
+
+    const safeCase = record.case_number.replace(/[^a-zA-Z0-9_-]/g, '_');
+    const safeCode = template.template_code.replace(/[^a-zA-Z0-9_-]/g, '_');
+    const filename = `${safeCase}_${safeCode}.docx`;
+
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+    res.status(200).send(buffer);
+  } catch (error: any) {
+    console.error('Error exporting blotter docx:', error);
+    res.status(500).json({ error: 'Internal server error exporting blotter .docx' });
   }
 }

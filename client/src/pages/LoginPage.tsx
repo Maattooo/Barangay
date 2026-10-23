@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useSettings } from '../context/SettingsContext';
 import { Building2, KeyRound, User, AlertCircle, Loader2 } from 'lucide-react';
 
 export const LoginPage: React.FC = () => {
   const { login, isAuthenticated } = useAuth();
+  const { settings } = useSettings();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -50,10 +52,10 @@ export const LoginPage: React.FC = () => {
             <Building2 className="w-6 h-6 text-zinc-100" />
           </div>
           <h1 className="text-base font-black tracking-tight text-white uppercase">
-            Barangay Operations Portal
+            {settings.barangay_name ? `${settings.barangay_name} Operations Portal` : 'Barangay Operations Portal'}
           </h1>
           <p className="text-[11px] font-mono text-zinc-400 mt-0.5 uppercase tracking-wider">
-            Civil Registry &amp; Document Terminal
+            {settings.municipality_name ? `${settings.municipality_name} • Civil Registry & Document Terminal` : 'Civil Registry & Document Terminal'}
           </p>
           <div className="mt-3 inline-flex items-center gap-2 px-2.5 py-1 text-[10px] font-mono font-medium text-emerald-400 bg-emerald-950/30 border border-emerald-800/60 rounded-none">
             <span className="w-1.5 h-1.5 rounded-none bg-emerald-400 animate-pulse"></span>

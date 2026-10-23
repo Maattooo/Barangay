@@ -20,6 +20,7 @@ import {
 interface SidebarProps {
   onClose?: () => void;
   barangayName?: string;
+  municipalityName?: string;
   isCollapsed?: boolean;
   onToggleCollapse?: () => void;
 }
@@ -85,6 +86,7 @@ export const NAV_ITEMS: NavItem[] = [
 export const Sidebar: React.FC<SidebarProps> = ({
   onClose,
   barangayName = 'Barangay System',
+  municipalityName,
   isCollapsed = false,
   onToggleCollapse
 }) => {
@@ -110,8 +112,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
               <h2 className="font-bold text-white text-xs tracking-tight uppercase truncate">
                 {barangayName}
               </h2>
-              <p className="text-[10px] font-mono text-zinc-400 tracking-wider uppercase">
-                Station Portal
+              <p className="text-[10px] font-mono text-zinc-400 tracking-wider uppercase truncate">
+                {municipalityName ? `${municipalityName} • Station Portal` : 'Station Portal'}
               </p>
             </div>
           )}

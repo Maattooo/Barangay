@@ -13,8 +13,9 @@ import { Resident } from '../types/resident';
 import { CertificateTemplate } from '../types/templates';
 import { BarangayOfficial } from '../types/officials';
 import { checkResidentBlotter, validateBlotterOverride } from './blotter.service';
-import { interpolateTemplate, getOfficialsSidebarData } from './template.service';
+import { interpolateTemplate, getOfficialsSidebarData, DEFAULT_CERTIFICATE_HEADER_HTML } from './template.service';
 import { logAuditEvent } from './audit.service';
+import { generateDocxBuffer } from './docx.service';
 
 export class IssuanceError extends Error {
   statusCode: number;
@@ -124,16 +125,24 @@ export function previewIssuance(input: PreviewIssuanceInput): PreviewIssuanceRes
     String(input.is_oic_signing) === '1'
   );
 
-  const html = interpolateTemplate(template.body_html, {
+  const interpContext = {
     resident,
     purpose: (input.purpose || '').trim(),
     or_number: (input.or_number || '').trim(),
     amount_paid: amountPaidVal,
+    ctc_number: (input.ctc_number || '').trim(),
+    ctc_date_issued: (input.ctc_date_issued || '').trim(),
+    ctc_place_issued: (input.ctc_place_issued || '').trim(),
     control_number: control_number_preview,
     signatory_official_id: signatory.id,
     is_oic_signing: isOic ? 1 : 0,
     transaction_date: new Date()
-  });
+  };
+
+  const html = interpolateTemplate(template.body_html, interpContext);
+  const rawHeader = template.header_html || DEFAULT_CERTIFICATE_HEADER_HTML;
+  const header_html = interpolateTemplate(rawHeader, interpContext);
+  const footer_html = interpolateTemplate(template.footer_html || '', interpContext);
 
   const sidebar_officials = getOfficialsSidebarData();
 
@@ -144,7 +153,11 @@ export function previewIssuance(input: PreviewIssuanceInput): PreviewIssuanceRes
     control_number_preview,
     sidebar_officials,
     blotter_status: blotterCheck,
-    default_fee: template.default_fee
+    default_fee: template.default_fee,
+    paper_size: (template.paper_size as 'short' | 'a4' | 'long') || 'short',
+    header_html,
+    header_config_json: template.header_config_json || '{}',
+    footer_html
   };
 }
 
@@ -329,16 +342,24 @@ export function createIssuance(
   const savedIssuance = issuanceTx();
 
   // 4. Generate printable HTML payload
-  const html = interpolateTemplate(template.body_html, {
+  const interpContext = {
     resident,
     purpose: savedIssuance.purpose,
     or_number: savedIssuance.or_number,
     amount_paid: savedIssuance.amount_paid,
+    ctc_number: savedIssuance.ctc_number,
+    ctc_date_issued: savedIssuance.ctc_date_issued,
+    ctc_place_issued: savedIssuance.ctc_place_issued,
     control_number: savedIssuance.control_number,
     signatory_official_id: savedIssuance.signatory_official_id,
     is_oic_signing: savedIssuance.is_oic_signing,
     transaction_date: savedIssuance.issued_at
-  });
+  };
+
+  const html = interpolateTemplate(template.body_html, interpContext);
+  const rawHeader = template.header_html || DEFAULT_CERTIFICATE_HEADER_HTML;
+  const header_html = interpolateTemplate(rawHeader, interpContext);
+  const footer_html = interpolateTemplate(template.footer_html || '', interpContext);
 
   const sidebar_officials = getOfficialsSidebarData();
 
@@ -348,7 +369,11 @@ export function createIssuance(
     sidebar_officials,
     template_name: template.template_name,
     title_header: template.title_header,
-    show_officials_sidebar: template.show_officials_sidebar
+    show_officials_sidebar: template.show_officials_sidebar,
+    paper_size: (template.paper_size as 'short' | 'a4' | 'long') || 'short',
+    header_html,
+    header_config_json: template.header_config_json || '{}',
+    footer_html
   };
 }
 
@@ -471,6 +496,10 @@ export function getIssuanceById(id: number) {
       t.title_header,
       t.show_officials_sidebar,
       t.body_html,
+      t.paper_size,
+      t.header_html,
+      t.header_config_json,
+      t.footer_html,
       u.full_name AS issued_by_name
     FROM certificate_issuances ci
     LEFT JOIN residents r ON ci.resident_id = r.id
@@ -484,6 +513,10 @@ export function getIssuanceById(id: number) {
     title_header: string;
     show_officials_sidebar: number;
     body_html: string;
+    paper_size?: 'short' | 'a4' | 'long';
+    header_html?: string;
+    header_config_json?: string;
+    footer_html?: string;
     issued_by_name: string;
   }) | undefined;
 
@@ -493,16 +526,24 @@ export function getIssuanceById(id: number) {
 
   const resident = db.prepare('SELECT * FROM residents WHERE id = ?').get(issuance.resident_id) as Resident | undefined;
 
-  const html = interpolateTemplate(issuance.body_html || '', {
+  const interpContext = {
     resident,
     purpose: issuance.purpose,
     or_number: issuance.or_number,
     amount_paid: issuance.amount_paid,
+    ctc_number: issuance.ctc_number,
+    ctc_date_issued: issuance.ctc_date_issued,
+    ctc_place_issued: issuance.ctc_place_issued,
     control_number: issuance.control_number,
     signatory_official_id: issuance.signatory_official_id,
     is_oic_signing: issuance.is_oic_signing,
     transaction_date: issuance.issued_at
-  });
+  };
+
+  const html = interpolateTemplate(issuance.body_html || '', interpContext);
+  const rawHeader = issuance.header_html || DEFAULT_CERTIFICATE_HEADER_HTML;
+  const header_html = interpolateTemplate(rawHeader, interpContext);
+  const footer_html = interpolateTemplate(issuance.footer_html || '', interpContext);
 
   const sidebar_officials = getOfficialsSidebarData();
 
@@ -535,9 +576,61 @@ export function getIssuanceById(id: number) {
     template_code: issuance.template_code,
     title_header: issuance.title_header,
     show_officials_sidebar: issuance.show_officials_sidebar,
+    paper_size: (issuance.paper_size as 'short' | 'a4' | 'long') || 'short',
+    header_html,
+    header_config_json: issuance.header_config_json || '{}',
+    footer_html,
     issued_by_name: issuance.issued_by_name,
     html,
     sidebar_officials,
     issuance: issuanceRecord
+  };
+}
+
+/**
+ * Generates a filled MS Word (.docx) buffer for a saved issuance record.
+ */
+export function exportIssuanceDocxById(id: number, paperSizeOverride?: 'short' | 'a4' | 'long'): { buffer: Buffer; filename: string } | null {
+  const details = getIssuanceById(id);
+  if (!details) return null;
+
+  const paperSize = paperSizeOverride || details.paper_size || 'short';
+  const buffer = generateDocxBuffer({
+    titleHeader: details.title_header,
+    headerHtml: details.header_html || DEFAULT_CERTIFICATE_HEADER_HTML,
+    bodyHtml: details.html,
+    footerHtml: details.footer_html || '',
+    paperSize,
+    controlNumber: details.control_number
+  });
+
+  const safeCtrl = details.control_number.replace(/[^a-zA-Z0-9_-]/g, '_');
+  return {
+    buffer,
+    filename: `${safeCtrl}.docx`
+  };
+}
+
+/**
+ * Generates a filled MS Word (.docx) buffer for an issuance preview.
+ */
+export function exportPreviewIssuanceDocx(
+  input: PreviewIssuanceInput & { paper_size?: 'short' | 'a4' | 'long' }
+): { buffer: Buffer; filename: string } {
+  const preview = previewIssuance(input);
+  const paperSize = input.paper_size || preview.paper_size || 'short';
+  const buffer = generateDocxBuffer({
+    titleHeader: preview.title_header,
+    headerHtml: preview.header_html || DEFAULT_CERTIFICATE_HEADER_HTML,
+    bodyHtml: preview.html,
+    footerHtml: preview.footer_html || '',
+    paperSize,
+    controlNumber: preview.control_number_preview
+  });
+
+  const safeTitle = preview.title_header.replace(/[^a-zA-Z0-9_-]/g, '_');
+  return {
+    buffer,
+    filename: `${safeTitle}_PREVIEW.docx`
   };
 }

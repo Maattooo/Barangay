@@ -63,6 +63,10 @@ export interface PreviewIssuanceResponse {
     cases: BlotterCaseSummary[];
   };
   default_fee: number;
+  paper_size?: 'short' | 'a4' | 'long';
+  header_html?: string;
+  header_config_json?: string;
+  footer_html?: string;
 }
 
 export interface PrintableIssuancePayload {
@@ -72,6 +76,10 @@ export interface PrintableIssuancePayload {
   template_name: string;
   title_header: string;
   show_officials_sidebar: number;
+  paper_size?: 'short' | 'a4' | 'long';
+  header_html?: string;
+  header_config_json?: string;
+  footer_html?: string;
 }
 
 export interface IssuanceQueryParams {

@@ -119,8 +119,14 @@ export interface UpdateOfficialInput {
 export type { CertificateTemplate };
 
 export interface UpdateTemplateInput {
+  template_name?: string;
+  template_category?: 'certificate' | 'blotter';
   title_header?: string;
+  paper_size?: 'short' | 'a4' | 'long';
+  header_html?: string;
+  header_config_json?: string;
   body_html?: string;
+  footer_html?: string;
   show_officials_sidebar?: number;
   default_fee?: number;
   is_active?: number;
@@ -134,6 +140,8 @@ export type AuditAction =
   | 'ARCHIVE'
   | 'RESTORE'
   | 'PRINT_CERTIFICATE'
+  | 'PRINT_BLOTTER'
+  | 'EXPORT_BLOTTER_DOCX'
   | 'BLOTTER_OVERRIDE'
   | 'IMPORT_EXCEL'
   | 'EXPORT_EXCEL'

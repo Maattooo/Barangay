@@ -10,7 +10,22 @@ import { getSystemSettings } from '../services/template.service';
 
 const router = Router();
 
-// All system endpoints require authentication
+/**
+ * GET /api/system/public-meta
+ * Returns public branding metadata (Barangay name, municipality, province)
+ * Accessible without authentication for the login screen and public branding.
+ */
+router.get('/public-meta', (_req: Request, res: Response): void => {
+  const settings = getSystemSettings();
+  res.status(200).json({
+    barangay_name: settings.barangay_name || 'Barangay San Jose',
+    municipality_name: settings.municipality_name || 'Antipolo City',
+    province_name: settings.province_name || 'Rizal',
+    region_name: settings.region_name || 'Region IV-A (CALABARZON)'
+  });
+});
+
+// All subsequent system endpoints require authentication
 router.use(authenticate);
 
 /**
@@ -89,6 +104,33 @@ router.put('/settings', requireRole('Admin'), (req: Request, res: Response): voi
           const stringVal = typeof val === 'string' ? val : JSON.stringify(val);
           upsertStmt.run(key, stringVal);
         }
+      }
+
+      // Automatically sync updated seal URLs into all certificate and blotter templates
+      if (newSettings.barangay_logo_url !== undefined || newSettings.city_logo_url !== undefined) {
+        try {
+          const certTemplates = db.prepare('SELECT id, header_config_json FROM certificate_templates').all() as { id: number; header_config_json: string }[];
+          const updateCertStmt = db.prepare('UPDATE certificate_templates SET header_config_json = ? WHERE id = ?');
+          for (const t of certTemplates) {
+            let cfg: any = {};
+            try { cfg = JSON.parse(t.header_config_json || '{}'); } catch {}
+            if (newSettings.barangay_logo_url !== undefined) cfg.barangayLogoUrl = newSettings.barangay_logo_url;
+            if (newSettings.city_logo_url !== undefined) cfg.cityLogoUrl = newSettings.city_logo_url;
+            updateCertStmt.run(JSON.stringify(cfg), t.id);
+          }
+        } catch {}
+
+        try {
+          const blotterTemplates = db.prepare('SELECT id, header_config_json FROM blotter_templates').all() as { id: number; header_config_json: string }[];
+          const updateBlotterStmt = db.prepare('UPDATE blotter_templates SET header_config_json = ? WHERE id = ?');
+          for (const bt of blotterTemplates) {
+            let cfg: any = {};
+            try { cfg = JSON.parse(bt.header_config_json || '{}'); } catch {}
+            if (newSettings.barangay_logo_url !== undefined) cfg.barangayLogoUrl = newSettings.barangay_logo_url;
+            if (newSettings.city_logo_url !== undefined) cfg.cityLogoUrl = newSettings.city_logo_url;
+            updateBlotterStmt.run(JSON.stringify(cfg), bt.id);
+          }
+        } catch {}
       }
     });
 

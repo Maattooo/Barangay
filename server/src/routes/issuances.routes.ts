@@ -5,7 +5,9 @@ import {
   previewIssuanceController,
   createIssuanceController,
   getIssuancesListController,
-  getIssuanceByIdController
+  getIssuanceByIdController,
+  exportPreviewIssuanceDocxController,
+  exportIssuanceDocxByIdController
 } from '../controllers/issuances.controller';
 
 const router = Router();
@@ -23,6 +25,12 @@ router.use(requireRole('Admin', 'Clerk', 'Treasurer'));
 router.post('/preview', previewIssuanceController);
 
 /**
+ * POST /api/issuances/export-docx
+ * Exports a filled MS Word (.docx) file for a previewed certificate.
+ */
+router.post('/export-docx', exportPreviewIssuanceDocxController);
+
+/**
  * POST /api/issuances
  * Atomic certificate issuance transaction endpoint.
  */
@@ -33,6 +41,12 @@ router.post('/', createIssuanceController);
  * Paginated issuance history with multi-parameter filtering.
  */
 router.get('/', getIssuancesListController);
+
+/**
+ * GET /api/issuances/:id/export-docx
+ * Exports a filled MS Word (.docx) file for a saved certificate issuance.
+ */
+router.get('/:id/export-docx', exportIssuanceDocxByIdController);
 
 /**
  * GET /api/issuances/:id
